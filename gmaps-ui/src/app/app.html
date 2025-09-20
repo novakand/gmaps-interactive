@@ -1,0 +1,51 @@
+<google-map
+  height="100vh"
+  width="100%"
+  [options]="options"
+  (mapInitialized)="onMapInit($event)"
+>
+
+
+<app-map-controls [map]="map!" position="TOP_CENTER">
+  <app-map-control>
+    <button type="button" class="gm-control-button" (click)="map?.setCenter({lat:41.85, lng:-87.65})">
+      Center Map
+    </button>
+  </app-map-control>
+</app-map-controls>
+
+  <app-marker-clusterer
+    [map]="map"
+    [points]="points"
+    [algorithm]="'grid'"
+    [gridSize]="200"
+    [maxZoom]="18"
+  >
+
+    <ng-template
+      #marker
+      let-point
+    >
+      <div class="pin">
+        <span class="dot"></span>
+      </div>
+    </ng-template>
+
+    <ng-template
+      #cluster
+      let-count="count"
+      let-position="position"
+      let-markers="markers"
+    >
+      <div class="cluster-badge">
+        {{ count }}
+      </div>
+    </ng-template>
+
+  </app-marker-clusterer>
+  <map-marker
+    *ngFor="let m of markers"
+    [position]="m.position"
+    [title]="m.title"
+  ></map-marker>
+</google-map>
