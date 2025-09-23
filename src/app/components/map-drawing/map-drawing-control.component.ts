@@ -216,11 +216,22 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
   private _setMapGestures(lock: boolean) {
   if (!this._gmap) return;
 
-  this._gmap.setOptions({
-    draggable: !lock,
-    scrollwheel: !lock,
-    disableDoubleClickZoom: lock,
-    clickableIcons: !lock,
-  });
+ this._gmap.setOptions(
+    lock
+      ? {
+          draggable: false,
+          disableDoubleClickZoom: true,
+          keyboardShortcuts: false,
+          gestureHandling: 'none' as any,
+          clickableIcons: false,
+        }
+      : {
+          draggable: true,
+          disableDoubleClickZoom: false,
+          keyboardShortcuts: true,
+          gestureHandling: 'greedy' as any, // можно 'auto', но greedy обычно удобнее
+          clickableIcons: true,
+        }
+  );
 }
 }
