@@ -16,9 +16,9 @@
     </app-map-control>
   </app-map-controls> -->
 
-  <map-drawing-control #drawing></map-drawing-control>
+  <map-drawing-control (addFeature)="onaddFeature($event)" #drawing [style]="style"></map-drawing-control>
 
-  <!-- <app-marker-clusterer
+  <app-marker-clusterer
     [map]="map"
     [points]="points"
     [algorithm]="'grid'"
@@ -46,8 +46,8 @@
       </div>
     </ng-template>
 
-  </app-marker-clusterer>
-  <map-marker
+  </app-marker-clusterer> 
+  <!-- <map-marker
     *ngFor="let m of markers"
     [position]="m.position"
     [title]="m.title"

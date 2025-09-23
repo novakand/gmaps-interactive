@@ -5,6 +5,7 @@ import { MarkerClustererComponent } from './components/marker-clusterer/marker-c
 import { MapControlsComponent } from './components/map-controls/map-controls.component';
 import { MapControlComponent } from './components/map-control/map-control.component';
 import { MapDrawingComponent } from './components/map-drawing/map-drawing-control.component';
+import { filter, Subject, take, takeUntil, tap } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -20,9 +21,10 @@ import { MapDrawingComponent } from './components/map-drawing/map-drawing-contro
 export class App {
   protected readonly title = signal('gmaps-ui');
   @ViewChild(GoogleMap) mapCmp!: GoogleMap;
+  @ViewChild('drawing') drawingControl!: MapDrawingComponent;
   map: google.maps.Map | null = null;
   points: { position: google.maps.LatLngLiteral }[] = [];
-
+private _destroy$ = new Subject<boolean>();
   options: google.maps.MapOptions = {
     center: { lat: 59.3293, lng: 18.0686 },
     zoom: 10,
@@ -44,12 +46,31 @@ export class App {
     return c instanceof google.maps.LatLng ? { lat: c.lat(), lng: c.lng() } : c;
   }
 
+  style = {
+  strokeColor: '#1a73e8',
+  strokeOpacity: 1,
+  strokeWeight: 2,
+  fillColor: '#1a73e8',
+  fillOpacity: 0.2,
+  editable: false,   // по умолчанию фигуры НЕ редактируем
+  visible: true
+}
+
   onMapInit(map: google.maps.Map) { this.map = map; }
 
   ngAfterViewInit() {
-    const gmap = this.mapCmp.googleMap!;
-    // пример нативного доступа:
-    // new google.maps.Marker({ map: gmap, position: { lat: 59.338, lng: 18.08 } });
+
+  }
+
+  public onaddFeature(data){
+    this.drawingControl.getGeoJson$()
+       .pipe(
+       filter(Boolean),
+        take(1),
+         takeUntil(this._destroy$),
+        tap((geoJson) => console.log(geoJson))
+       )
+       .subscribe();
   }
 
   ngOnInit() {
@@ -60,5 +81,20 @@ export class App {
         lng: c.lng + (Math.random() - 0.5) * 0.9,
       },
     }));
+
+    // setTimeout((
+      
+    // )=>{
+    //    this.drawingControl.getGeoJson$()
+    //   .pipe(
+    //     filter(Boolean),
+    //     take(1),
+    //     takeUntil(this._destroy$),
+    //     tap((geoJson) => console.log(geoJson))
+    //   )
+    //   .subscribe();
+    // },3000);
+
+    
   }
 }
