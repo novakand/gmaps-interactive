@@ -216,7 +216,11 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
   private _setMapGestures(lock: boolean) {
   if (!this._gmap) return;
 
- this._gmap.setOptions(
+ if (!this._gmap) return;
+
+  const div = this._gmap.getDiv() as HTMLElement;
+
+  this._gmap.setOptions(
     lock
       ? {
           draggable: false,
@@ -233,5 +237,10 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
           clickableIcons: true,
         }
   );
+
+  // важно для iOS/Safari: гарантируем, что тач-движения не уйдут в скролл/панорамирование
+  div.style.touchAction = lock ? 'none' : '';
+  (div.style as any).webkitUserSelect = lock ? 'none' : ''; // доп. защита на iOS
+  (this._gmap as any).set('draggableCursor', lock ? 'crosshair' : null);
 }
 }
