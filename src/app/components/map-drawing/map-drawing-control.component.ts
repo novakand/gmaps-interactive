@@ -109,6 +109,7 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
       (ids: string[], ctx: { mode: string; action: string }) => {
         if (ctx?.mode === 'freehand-linestring' && ctx?.action === 'draw') {
           this._collapseLineStringToPolygon(ids?.[ids.length - 1]);
+          this._setMapGestures(false);
         }
       }
     );
@@ -196,6 +197,7 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
     if (mode === 'freehand-linestring') {
       td.setMode?.('static');
       this._isFreehand = false;
+      this._setMapGestures(false);
       return;
     }
 
@@ -208,5 +210,18 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
     // включаем режим
     td.setMode?.('freehand-linestring');
     this._isFreehand = true;
+    this._setMapGestures(true); 
   }
+
+  private _setMapGestures(lock: boolean) {
+  if (!this._gmap) return;
+
+  this._gmap.setOptions({
+    draggable: !lock,
+    disableDoubleClickZoom: lock,
+    keyboardShortcuts: !lock,
+    gestureHandling: (lock ? 'none' : 'auto') as any,
+    clickableIcons: !lock,
+  });
+}
 }
