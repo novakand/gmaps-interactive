@@ -19,7 +19,6 @@ import { Feature, FeatureCollection, GeoJsonProperties, Geometry } from 'geojson
 import { featureCollection, feature } from "@turf/helpers";
 import { MapControlComponent } from '../map-control/map-control.component';
 import { MapControlsComponent } from '../map-controls/map-controls.component';
-// import { DrawGoogleMapsAdapter } from './models/draw-google-maps-adapter';
 @Component({
   selector: 'map-drawing-control',
   templateUrl: './map-drawing-control.component.html',
