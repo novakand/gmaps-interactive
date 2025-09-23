@@ -216,31 +216,37 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
   private _setMapGestures(lock: boolean) {
   if (!this._gmap) return;
 
- if (!this._gmap) return;
+  const root = this._gmap.getDiv() as HTMLElement;
+  const gmStyle = root.querySelector('.gm-style') as HTMLElement | null;
 
-  const div = this._gmap.getDiv() as HTMLElement;
-
+  // ВАЖНО: не выключаем draggable — так адаптер продолжит получать движение.
   this._gmap.setOptions(
     lock
       ? {
-          draggable: false,
+          draggable: true,                  // <— оставляем true!
+          gestureHandling: 'none' as any,   // блокируем пан/зум на мобилках
           disableDoubleClickZoom: true,
           keyboardShortcuts: false,
-          gestureHandling: 'none' as any,
           clickableIcons: false,
         }
       : {
           draggable: true,
+          gestureHandling: 'greedy' as any, // можно 'auto'
           disableDoubleClickZoom: false,
           keyboardShortcuts: true,
-          gestureHandling: 'greedy' as any, // можно 'auto', но greedy обычно удобнее
           clickableIcons: true,
         }
   );
 
-  // важно для iOS/Safari: гарантируем, что тач-движения не уйдут в скролл/панорамирование
-  div.style.touchAction = lock ? 'none' : '';
-  (div.style as any).webkitUserSelect = lock ? 'none' : ''; // доп. защита на iOS
+  const touchOn = (el?: HTMLElement | null) => {
+    if (!el) return;
+    el.style.touchAction = lock ? 'none' : '';
+    (el.style as any).webkitUserSelect = lock ? 'none' : '';
+  };
+
+  touchOn(root);        // корневой контейнер карты
+  touchOn(gmStyle);     // внутренний overlay Google (обязательно для iOS)
+
   (this._gmap as any).set('draggableCursor', lock ? 'crosshair' : null);
 }
 }
