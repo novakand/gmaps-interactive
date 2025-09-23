@@ -213,6 +213,7 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
     this._setMapGestures(true); 
   }
 
+  
   private _setMapGestures(lock: boolean) {
   if (!this._gmap) return;
 
