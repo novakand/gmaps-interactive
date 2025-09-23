@@ -219,8 +219,6 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
   this._gmap.setOptions({
     draggable: !lock,
     disableDoubleClickZoom: lock,
-    keyboardShortcuts: !lock,
-    gestureHandling: (lock ? 'none' : 'auto') as any,
     clickableIcons: !lock,
   });
 }
