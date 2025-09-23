@@ -5,15 +5,21 @@
   (mapInitialized)="onMapInit($event)"
 >
 
-<app-map-controls [map]="map!" position="TOP_CENTER">
-  <app-map-control>
-    <button type="button" class="gm-control-button" (click)="map?.setCenter({lat:41.85, lng:-87.65})">
-      Center Map
-    </button>
-  </app-map-control>
-</app-map-controls>
+  <!-- <app-map-controls position="TOP_CENTER">
+    <app-map-control>
+      <button
+        type="button"
+        class="gm-control-button"
+        (click)="map?.setCenter({lat:41.85, lng:-87.65})"
+      >
+        Center Map
+      </button>
+    </app-map-control>
+  </app-map-controls> -->
 
-  <app-marker-clusterer
+  <map-drawing-control #drawing></map-drawing-control>
+
+  <!-- <app-marker-clusterer
     [map]="map"
     [points]="points"
     [algorithm]="'grid'"
@@ -46,5 +52,5 @@
     *ngFor="let m of markers"
     [position]="m.position"
     [title]="m.title"
-  ></map-marker>
+  ></map-marker> -->
 </google-map>

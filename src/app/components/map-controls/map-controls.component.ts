@@ -4,12 +4,14 @@ import {
     Component,
     ElementRef,
     HostBinding,
+    inject,
     Inject,
     Input,
     OnChanges,
     OnDestroy,
     SimpleChanges,
 } from '@angular/core';
+import { GoogleMap } from '@angular/google-maps';
 
 @Component({
     selector: 'app-map-controls',
@@ -18,21 +20,21 @@ import {
     styleUrl: './map-controls.component.scss'
 })
 export class MapControlsComponent implements AfterViewInit, OnChanges, OnDestroy {
-  
-    @Input() map!: google.maps.Map;
+
+
     @Input() position: keyof typeof google.maps.ControlPosition | google.maps.ControlPosition = 'TOP_RIGHT';
     @Input() orientation: 'horizontal' | 'vertical' = 'horizontal';
 
     @HostBinding('class.horizontal') get isH() { return this.orientation === 'horizontal'; }
     @HostBinding('class.vertical') get isV() { return this.orientation === 'vertical'; }
-
+    private readonly map = inject(GoogleMap);
     private container!: any;
     private currentPos?: google.maps.ControlPosition;
 
     constructor(@Inject(ElementRef) private hostRef: ElementRef<HTMLElement>) { }
 
     ngAfterViewInit(): void {
-        this.container = this.hostRef.nativeElement; 
+        this.container = this.hostRef.nativeElement;
         this.attachToMap();
     }
 

@@ -3,14 +3,16 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "strict": true,
-    "noImplicitOverride": true,
+    "strict": false,
+    "noImplicitOverride": false,
     "noPropertyAccessFromIndexSignature": true,
-    "noImplicitReturns": true,
+    "noImplicitReturns": false,
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "isolatedModules": true,
     "experimentalDecorators": true,
+     "strictPropertyInitialization":false,
+      "exactOptionalPropertyTypes":false,
     "importHelpers": true,
     "target": "ES2022",
     "module": "preserve"

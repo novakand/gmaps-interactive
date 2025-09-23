@@ -4,10 +4,16 @@ import { GoogleMap, GoogleMapsModule } from '@angular/google-maps';
 import { MarkerClustererComponent } from './components/marker-clusterer/marker-clusterer.component';
 import { MapControlsComponent } from './components/map-controls/map-controls.component';
 import { MapControlComponent } from './components/map-control/map-control.component';
+import { MapDrawingComponent } from './components/map-drawing/map-drawing-control.component';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, GoogleMapsModule, MarkerClustererComponent,MapControlsComponent,MapControlComponent],
+  imports: [CommonModule, 
+    GoogleMapsModule, 
+    MarkerClustererComponent,
+     MapControlsComponent, 
+     MapControlComponent,
+    MapDrawingComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

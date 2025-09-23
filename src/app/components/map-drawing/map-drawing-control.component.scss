@@ -1,0 +1,37 @@
+::ng-deep {
+  button[type="button"][title*="Undo"] {
+    display: none;
+  }
+
+  .p-button-map.p-togglebutton.p-togglebutton-checked {
+    box-shadow: none;
+  }
+
+  .p-togglebutton-checked .p-togglebutton-content {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .icon-only-toggle {
+    .p-togglebutton-content {
+      flex: none;
+
+      &::before {
+        content: none !important;
+        padding-inline-start: 0;
+        padding-inline-end: 0;
+        gap: 0;
+      }
+
+      .p-togglebutton-label {
+        display: none;
+      }
+
+    }
+
+    padding: 0;
+    line-height: 0;
+    width: 38px;
+    height: 38px;
+  }
+}
