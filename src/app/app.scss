@@ -37,16 +37,13 @@ body {
 /* ===== кластер (SVG-пин без обводок) ===== */
 .cluster-pin-svg {
   will-change: transform;
-  pointer-events:auto;
-  touch-action: manipulation;
+  
 }
 
 .cluster-svg {
   width: 44px;
   height: 56px;
   display: block;
-  pointer-events:auto;
-  touch-action: manipulation
 }
 
 /* ничего больше не добавляем — это и держит позицию стабильно при зуме */
