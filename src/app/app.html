@@ -293,7 +293,7 @@
 
 
 
-      <p-drawer
+    <p-drawer
       [(visible)]="isFilterVisible"
       [closable]="false"
       modal="false"
@@ -337,7 +337,7 @@
         </div>
       </ng-template>
       <ng-template #content>
-      <app-map-filter [items]="allPointsFC?.features"></app-map-filter>
+        <app-map-filter [items]="allPointsFC?.features"></app-map-filter>
       </ng-template>
     </p-drawer>
 
@@ -352,8 +352,8 @@
     <app-marker-clusterer
       [map]="map"
       [points]="points"
-      [algorithm]="'grid'"
-      [gridSize]="200"
+      [algorithm]="'super'"
+      [gridSize]="220"
       [maxZoom]="18"
     >
 
