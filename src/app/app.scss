@@ -31,14 +31,11 @@ body {
   border-radius: 50%;
   background: var(--dot-color);
   box-shadow: 0 0 0 var(--dot-ring) var(--dot-ring-color); /* кольцо-обводка */
-  user-select: none;
   will-change: transform;
 }
 
 /* ===== кластер (SVG-пин без обводок) ===== */
 .cluster-pin-svg {
-  pointer-events: none;
-  user-select: none;
   will-change: transform;
 }
 
