@@ -356,32 +356,15 @@
       [gridSize]="220"
       [maxZoom]="18"
     >
-
-      <!-- <ng-template
-        #marker
-        let-point
-      >
-        <div
-          class="job-dot"
-          [style.--dot-color]="point?.data?.typeColor || '#0B5FD7'"
-          (click)="selectPoint(point)"
-          [attr.title]="point?.data?.type || point?.title || ''"
-        >
-        </div>
-      </ng-template> -->
-
-
       <ng-template
         #marker
         let-point
       >
-        <!-- Обёртка маркера — ТОЛЬКО она кликабельна -->
         <div
           class="relative inline-flex items-center justify-center"
           (click)="selectPoint(point)"
         >
 
-          <!-- синяя (или цвет категории) точка -->
           <div
             class="job-dot"
             [style.--dot-color]="point?.data?.typeColor || '#0B5FD7'"
@@ -389,32 +372,31 @@
           >
           </div>
 
-          <!-- ценник появляется ТОЛЬКО у выбранного -->
           <div
             *ngIf="point?.data?.id === selectedPointId"
             class="pointer-events-none select-none
-                absolute left-1/2 -translate-x-1/2
-                bottom-[calc(100%+12px)] z-[2]"
+         absolute left-1/2 -translate-x-1/2
+         bottom-[calc(100%+12px)] z-[2]
+         max-[480px]:bottom-[calc(100%+8px)]"
           >
-            <!-- сама «пилюля» -->
             <div
               class="inline-flex items-center rounded-full px-3 py-1
-                  text-[13px] font-semibold text-white
-                  shadow-[0_6px_16px_rgba(0,0,0,.25)]"
+           text-[13px] font-semibold text-white
+           shadow-[0_6px_16px_rgba(0,0,0,.25)]
+           whitespace-nowrap
+           max-[480px]:px-2 max-[480px]:py-0.5
+           max-[480px]:text-[11px] max-[480px]:rounded-md"
               [style.background]="point?.data?.typeColor || '#3B82F6'"
             >
               {{ point?.data?.salaryEUR | number:'1.0-0' }}&nbsp;€/year
             </div>
 
-            <!-- «хвостик» строго по центру плашки -->
             <svg
-              class="absolute left-1/2 -translate-x-1/2 top-[calc(100%-1px)]"
-              width="16"
-              height="10"
+              class="absolute left-1/2 -translate-x-1/2 top-[calc(100%-1px)]
+           w-4 h-2.5 max-[480px]:w-3 max-[480px]:h-2"
               viewBox="0 0 16 10"
               aria-hidden="true"
             >
-              <!-- лёгкая «капля», выглядит как круглый хвост -->
               <path
                 [attr.fill]="point?.data?.typeColor || '#3B82F6'"
                 d="M8,10 C8,10 11,5 16,0 H0 C5,5 8,10 8,10 Z"
