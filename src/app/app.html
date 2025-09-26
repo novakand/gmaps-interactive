@@ -1,55 +1,508 @@
-<google-map
-  height="100svh"
-  width="100%"
-  [options]="options"
-  (mapInitialized)="onMapInit($event)"
->
-  <!-- <app-map-controls position="TOP_CENTER">
-    <app-map-control>
-      <button
-        type="button"
-        class="gm-control-button"
-        (click)="map?.setCenter({lat:41.85, lng:-87.65})"
-      >
-        Center Map
-      </button>
-    </app-map-control>
-  </app-map-controls> -->
-
-  <map-drawing-control (addFeature)="onaddFeature($event)" #drawing [style]="style"></map-drawing-control>
-
-  <app-marker-clusterer
-    [map]="map"
-    [points]="points"
-    [algorithm]="'grid'"
-    [gridSize]="200"
-    [maxZoom]="18"
+<div class="c-map">
+  <p-progressBar
+    *ngIf="showProgress"
+    styleClass="map-progress"
+    [style]="{'height': '4px'}"
+    mode="indeterminate"
+  />
+  <google-map
+    height="100svh"
+    width="100%"
+    [options]="options"
+    (mapInitialized)="onMapInit($event)"
   >
 
-    <ng-template
-      #marker
-      let-point
-    >
-      <div class="pin">
-        <span class="dot"></span>
-      </div>
-    </ng-template>
 
-    <ng-template
-      #cluster
-      let-count="count"
-      let-position="position"
-      let-markers="markers"
-    >
-      <div class="cluster-badge">
-        {{ count }}
-      </div>
-    </ng-template>
+    <div class="c-map-toolbar-horizontal">
+      <p-button
+        label="Filter"
+        styleClass="p-button-map"
+        (click)="onVisibleFilterChange(isFilterVisible)"
+        [outlined]="true"
+      >
 
-  </app-marker-clusterer> 
-  <!-- <map-marker
+        <ng-template
+          #icon
+          let-checked
+        >
+
+
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            style="color: var(--p-surface-700);"
+            viewBox="0 0 960 960"
+            width="16"
+            height="16"
+          >
+            <path
+              fill="currentColor"
+              d="M109.33333333333331 908.6666666666665v-392h-109.33333333333333v-80h298.66666666666663v80h-109.33333333333333v392h-80Zm0-552v-301.3333333333333h80v301.3333333333333h-80Zm221.33333333333331-54.666666666666664v-80h109.33333333333333v-166.66666666666666h80v166.66666666666666h109.33333333333333v80H330.66666666666663Zm109.33333333333333 606.6666666666666v-526.6666666666666h80v526.6666666666666h-80Zm330.66666666666663 0v-169.33333333333331h-109.33333333333333v-80h298.66666666666663v80h-109.33333333333333v169.33333333333331h-80Zm0-329.3333333333333v-524h80v524h-80Z"
+            />
+          </svg>
+
+        </ng-template>
+      </p-button>
+      <div class="flex-fill"></div>
+      <div class="c-map__left-offset">
+        <p-button
+          [label]="
+    totalCount
+      ? ('Showing ' + shownCount + ' of ' + totalCount + (isFiltered ? '' : ''))
+      : 'loading...'
+  "
+          [outlined]="true"
+          [disabled]="!totalCount"
+          styleClass="p-button-map"
+        >
+        </p-button>
+
+      </div>
+      <div class="flex-fill"></div>
+    </div>
+
+    <div class="c-map-toolbar-vertical">
+
+
+      <p-selectbutton
+        styleClass="icon-only-toggle p-button-icon-only p-button-map mb-4"
+        [options]="justifyOptions"
+        [(ngModel)]="value"
+        (onChange)="onChangesMode($event)"
+        [optionLabel]="'justify'"
+        [optionValue]="'justify'"
+      >
+        <ng-template
+          pTemplate="item"
+          let-item
+        >
+          <ng-container *ngComponentOutlet="isSelected(item) ? item.iconSelected : item.icon"></ng-container>
+        </ng-template>
+      </p-selectbutton>
+
+      <div class="c-map__y-offset"></div>
+      <div class="c-map__y-offset"></div>
+      <div class="flex-fill"></div>
+      <div class="c-map__y-offset"></div>
+      <map-zoom-control></map-zoom-control>
+      <div class="flex-fill"></div>
+
+      <div class="c-map__y-offset"></div>
+
+      <div class="flex-fill"></div>
+
+    </div>
+
+
+    <!-- <div class="c-map-toolbar-horizontal c-map-toolbar-horizontal__bottom">
+      <p-button
+        label="Modify search"
+        (click)="openDrawer()"
+        styleClass="p-button-map"
+        [outlined]="true"
+      >
+
+        <ng-template
+          #icon
+          let-checked
+        >
+
+
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            style="color: var(--p-surface-700);"
+            viewBox="0 0 960 960"
+            width="16"
+            height="16"
+          >
+            <path
+              fill="currentColor"
+              d="M43.5789473684211 961.9999999999999q-16.105263157894736 0-26.993684210526315-10.901052631578947Q5.684210526315837 940.2105263157895 5.684210526315837 924.1052631578947v-416.84210526315786l103.74315789473683-303.1578947368421q7.414736842105263-22.736842105263158 26.993684210526315-36.63157894736842t43.57894736842105-13.894736842105262h275.36842105263156q-1.263157894736842 10.105263157894736-1.894736842105263 18.909473684210525-0.631578947368421 8.791578947368421-0.631578947368421 18.985263157894735t0.631578947368421 18.985263157894735Q454.1052631578948 219.26315789473685 455.36842105263156 229.36842105263153H180.00000000000006l-69.47368421052632 209.68421052631578h458.52631578947364q21.473684210526315 20.210526315789473 75.78947368421052 48t131.36842105263156 27.789473684210524H81.47368421052636v265.2631578947368h757.8947368421052v-271.57894736842104q25.263157894736842-6.315789473684211 43.57894736842105-12.631578947368421t32.21052631578947-12.631578947368421v440.84210526315786q0 16.105263157894736-10.888421052631577 26.993684210526315Q893.3684210526317 961.9999999999999 877.2631578947369 961.9999999999999h-24q-16.63578947368421 0-27.90315789473684-10.901052631578947Q814.1052631578948 940.2105263157895 814.1052631578948 924.1052631578947v-68.21052631578947H106.73684210526321v68.21052631578947q0 16.105263157894736-10.888421052631577 26.993684210526315Q84.94736842105269 961.9999999999999 68.84210526315795 961.9999999999999h-25.263157894736842Zm697.2631578947368-581.0526315789473l-6.315789473684211-58.10526315789473q-15.157894736842104-3.789473684210526-27.789473684210524-11.368421052631579t-21.473684210526315-17.684210526315788l-50.526315789473685 24-36.63157894736842-58.10526315789473 45.473684210526315-34.10526315789473q-6.315789473684211-13.894736842105262-6.315789473684211-34.10526315789473t6.315789473684211-34.10526315789473l-45.473684210526315-34.10526315789473 36.63157894736842-58.10526315789473 50.526315789473685 24q9.473684210526315-10.105263157894736 20.52631578947368-17.684210526315788t28.736842105263158-11.368421052631579l6.315789473684211-58.10526315789473h70.73684210526315l6.315789473684211 58.10526315789473q17.684210526315788 3.789473684210526 28.736842105263158 11.368421052631579T867.1578947368421 89.15789473684208l50.526315789473685-24 36.63157894736842 58.10526315789473-45.473684210526315 34.10526315789473q6.315789473684211 13.894736842105262 6.315789473684211 34.10526315789473t-6.315789473684211 34.10526315789473l45.473684210526315 34.10526315789473-36.63157894736842 58.10526315789473-50.526315789473685-24q-8.842105263157894 10.105263157894736-21.473684210526315 17.684210526315788t-27.789473684210524 11.368421052631579l-6.315789473684211 58.10526315789473h-70.73684210526315Zm35.368421052631575-106.10526315789473q34.73684210526316 0 59.05263157894736-24.31578947368421T859.578947368421 191.47368421052627q0-34.73684210526316-24.31578947368421-59.05263157894736T776.2105263157895 108.10526315789471q-34.73684210526316 0-59.05263157894736 24.31578947368421T692.8421052631579 191.47368421052627q0 34.73684210526316 24.31578947368421 59.05263157894736T776.2105263157895 274.8421052631579ZM81.47368421052636 514.8421052631578v265.2631578947368-265.2631578947368Zm131.36842105263156 202.10526315789474q29.469473684210524 0 50.10947368421053-19.894736842105264Q283.5789473684211 677.1578947368421 283.5789473684211 648.7368421052631q0-29.469473684210524-20.538947368421052-50.10947368421053Q242.48842105263168 577.9999999999999 213.14526315789476 577.9999999999999q-29.355789473684208 0-48.934736842105266 20.538947368421052-19.57894736842105 20.55157894736842-19.57894736842105 49.89473684210526 0 29.355789473684208 19.894736842105264 48.934736842105266Q184.42105263157902 716.9473684210526 212.84210526315792 716.9473684210526Zm493.89473684210526 0q29.469473684210524 0 50.10947368421053-19.894736842105264Q777.4736842105264 677.1578947368421 777.4736842105264 648.7368421052631q0-29.469473684210524-20.538947368421052-50.10947368421053Q736.3831578947369 577.9999999999999 707.0400000000001 577.9999999999999q-29.355789473684208 0-48.934736842105266 20.538947368421052-19.57894736842105 20.55157894736842-19.57894736842105 49.89473684210526 0 29.355789473684208 19.894736842105264 48.934736842105266Q678.3157894736843 716.9473684210526 706.7368421052631 716.9473684210526Z"
+            />
+          </svg>
+
+        </ng-template>
+      </p-button>
+      <div class="flex-fill"></div>
+
+    </div> -->
+
+    <p-drawer
+      [(visible)]="isVisible"
+      [closable]="false"
+      modal="false"
+      appendTo=""
+      styleClass="p-drawer-bottom-append h-[25rem]!"
+      [modal]="false"
+      (visibleChange)="onVisibleChange($event)"
+      position="bottom"
+    >
+
+      <ng-template #header>
+
+        <div class="flex items-center justify-between w-full mb-0 gap-2">
+          <div class="text-900 text-xl font-semibold whitespace-nowrap">Search by proximity</div>
+
+          <div class="flex items-center ml-auto">
+            <!-- <p-button
+              [rounded]="true"
+              (click)="onVisibleChange(false)"
+              severity="secondary"
+            >
+              <ng-template
+                #icon
+                let-checked
+              >
+
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 960 960"
+                  width="16"
+                  height="16"
+                >
+                  <path
+                    d="M73.84615384615381 962l-73.84615384615384-73.84615384615384 406.15384615384613-406.15384615384613-406.15384615384613-406.15384615384613 73.84615384615384-73.84615384615384 406.15384615384613 406.15384615384613 406.15384615384613-406.15384615384613 73.84615384615384 73.84615384615384-406.15384615384613 406.15384615384613 406.15384615384613 406.15384615384613-73.84615384615384 73.84615384615384-406.15384615384613-406.15384615384613-406.15384615384613 406.15384615384613Z"
+                  />
+                </svg>
+
+              </ng-template>
+            </p-button> -->
+          </div>
+        </div>
+      </ng-template>
+      <ng-template #content>
+        <map-isochrone
+          #isochrone
+          (addFeature)="onAddFeature($event, isochrone)"
+          (removeFeature)="onAddFeature($event, isochrone)"
+        >
+
+        </map-isochrone>
+      </ng-template>
+    </p-drawer>
+
+
+    <p-drawer
+      [(visible)]="isVisibleInwofindow"
+      position="bottom"
+      [closable]="false"
+      modal="false"
+      appendTo=""
+      styleClass="p-drawer-bottom-append h-[20rem]!"
+    >
+      <ng-template #header>
+        <div class="flex items-center justify-between gap-2 w-full">
+          <h2
+            class="text-900 text-xl font-semibold truncate"
+            [attr.aria-label]="selectedPoint?.data?.title"
+          >
+            {{ selectedPoint?.data?.title }}
+
+
+          </h2>
+
+          <p-button
+            [rounded]="true"
+            (click)="onClose(false)"
+            severity="secondary"
+            aria-label="Close"
+          >
+            <ng-template #icon>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 960 960"
+                width="16"
+                height="16"
+              >
+                <path
+                  d="M73.846 962 0 888.154l406.154-406.154L0 75.846 73.846 2l406.154 406.154L886.154 2 960 75.846 553.846 482 960 888.154 886.154 962 480 555.846 73.846 962Z"
+                />
+              </svg>
+            </ng-template>
+          </p-button>
+        </div>
+      </ng-template>
+
+      <ng-template #content>
+        <ng-container *ngIf="selectedPoint as sp">
+          <div
+            class="h-1.5 w-full"
+            [style.background]="sp.data?.typeColor"
+          ></div>
+
+          <div class="p-4 flex gap-3">
+
+            <div class="min-w-0 flex-1">
+              <div class="flex items-start justify-between gap-2">
+                <h3 class="text-base font-semibold text-gray-900 truncate">
+                  {{ sp.data?.company }}
+                </h3>
+                <span
+                  class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                  [style.background]="(sp.data?.typeColor || '#0B5FD7') + '22'"
+                  [style.color]="sp.data?.typeColor || '#0B5FD7'"
+                >
+                  {{ sp.data?.type }}
+                </span>
+              </div>
+
+
+              <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-600">
+                <span class="inline-flex items-center gap-1">
+                  <svg
+                    class="size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M6 7h12v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7Zm0-2a2 2 0 0 1 2-2h1v2h4V3h1a2 2 0 0 1 2 2v1H6V5Z"
+                    />
+                  </svg>
+                  {{ sp.data?.employment | titlecase }}
+                </span>
+                <span>•</span>
+                <span class="inline-flex items-center gap-1">
+                  <svg
+                    class="size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7Zm0 9.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"
+                    />
+                  </svg>
+                  {{ sp.data?.city }}, {{ sp.data?.country }}
+                </span>
+              </div>
+
+              <div class="mt-3 flex items-center justify-between">
+                <div class="text-sm font-semibold text-gray-900">
+                  {{ sp.data?.salaryEUR | currency:'EUR':'symbol':'1.0-0' }}
+                  <span class="text-xs font-normal text-gray-500">/ year</span>
+                </div>
+                <div class="text-xs text-gray-500">
+                  {{ sp.data?.postedAt | date:'mediumDate' }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 w-full">
+            <p-button
+              label="Respond"
+              [raised]="true"
+              styleClass="w-full justify-center"
+            />
+          </div>
+        </ng-container>
+      </ng-template>
+    </p-drawer>
+
+
+
+      <p-drawer
+      [(visible)]="isFilterVisible"
+      [closable]="false"
+      modal="false"
+      appendTo=""
+      styleClass="p-drawer-bottom-append h-[60rem]!"
+      [modal]="false"
+      position="bottom"
+    >
+
+      <ng-template #header>
+
+        <div class="flex items-center justify-between w-full mb-0 gap-2">
+          <div class="text-900 text-xl font-semibold whitespace-nowrap">Filter</div>
+
+          <div class="flex items-center ml-auto">
+            <p-button
+              [rounded]="true"
+              (click)="onVisibleFilterChange(isFilterVisible)"
+              severity="secondary"
+            >
+              <ng-template
+                #icon
+                let-checked
+              >
+
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 960 960"
+                  width="16"
+                  height="16"
+                >
+                  <path
+                    d="M73.84615384615381 962l-73.84615384615384-73.84615384615384 406.15384615384613-406.15384615384613-406.15384615384613-406.15384615384613 73.84615384615384-73.84615384615384 406.15384615384613 406.15384615384613 406.15384615384613-406.15384615384613 73.84615384615384 73.84615384615384-406.15384615384613 406.15384615384613 406.15384615384613 406.15384615384613-73.84615384615384 73.84615384615384-406.15384615384613-406.15384615384613-406.15384615384613 406.15384615384613Z"
+                  />
+                </svg>
+
+              </ng-template>
+            </p-button>
+          </div>
+        </div>
+      </ng-template>
+      <ng-template #content>
+      <app-map-filter [items]="allPointsFC?.features"></app-map-filter>
+      </ng-template>
+    </p-drawer>
+
+
+
+    <map-drawing-control
+      #drawing
+      (addFeature)="onAddFeature($event, drawing)"
+      (removeFeature)="onAddFeature($event, drawing)"
+      [style]="style"
+    ></map-drawing-control>
+    <app-marker-clusterer
+      [map]="map"
+      [points]="points"
+      [algorithm]="'grid'"
+      [gridSize]="200"
+      [maxZoom]="18"
+    >
+
+      <!-- <ng-template
+        #marker
+        let-point
+      >
+        <div
+          class="job-dot"
+          [style.--dot-color]="point?.data?.typeColor || '#0B5FD7'"
+          (click)="selectPoint(point)"
+          [attr.title]="point?.data?.type || point?.title || ''"
+        >
+        </div>
+      </ng-template> -->
+
+
+      <ng-template
+        #marker
+        let-point
+      >
+        <!-- Обёртка маркера — ТОЛЬКО она кликабельна -->
+        <div
+          class="relative inline-flex items-center justify-center"
+          (click)="selectPoint(point)"
+        >
+
+          <!-- синяя (или цвет категории) точка -->
+          <div
+            class="job-dot"
+            [style.--dot-color]="point?.data?.typeColor || '#0B5FD7'"
+            [attr.title]="point?.data?.type || point?.title || ''"
+          >
+          </div>
+
+          <!-- ценник появляется ТОЛЬКО у выбранного -->
+          <div
+            *ngIf="point?.data?.id === selectedPointId"
+            class="pointer-events-none select-none
+                absolute left-1/2 -translate-x-1/2
+                bottom-[calc(100%+12px)] z-[2]"
+          >
+            <!-- сама «пилюля» -->
+            <div
+              class="inline-flex items-center rounded-full px-3 py-1
+                  text-[13px] font-semibold text-white
+                  shadow-[0_6px_16px_rgba(0,0,0,.25)]"
+              [style.background]="point?.data?.typeColor || '#3B82F6'"
+            >
+              {{ point?.data?.salaryEUR | number:'1.0-0' }}&nbsp;€/year
+            </div>
+
+            <!-- «хвостик» строго по центру плашки -->
+            <svg
+              class="absolute left-1/2 -translate-x-1/2 top-[calc(100%-1px)]"
+              width="16"
+              height="10"
+              viewBox="0 0 16 10"
+              aria-hidden="true"
+            >
+              <!-- лёгкая «капля», выглядит как круглый хвост -->
+              <path
+                [attr.fill]="point?.data?.typeColor || '#3B82F6'"
+                d="M8,10 C8,10 11,5 16,0 H0 C5,5 8,10 8,10 Z"
+              />
+            </svg>
+          </div>
+        </div>
+      </ng-template>
+
+
+      <ng-template
+        #cluster
+        let-count="count"
+      >
+        <div
+          class="cluster-pin-svg"
+          [attr.title]="count + ' результатов'"
+        >
+          <svg
+            viewBox="0 0 44 56"
+            aria-hidden="true"
+            class="cluster-svg"
+          >
+            <path
+              fill="#E33D33"
+              d="M22 4
+             C12 4 4 12 4 22
+             C4 30 14 43 22 52
+             C30 43 40 30 40 22
+             C40 12 32 4 22 4Z"
+            />
+            <text
+              x="22"
+              y="22"
+              text-anchor="middle"
+              dominant-baseline="middle"
+              font-family="Inter, system-ui, Arial, sans-serif"
+              font-weight="700"
+              font-size="14"
+              fill="#FFFFFF"
+            >
+              {{ count }}
+            </text>
+          </svg>
+        </div>
+      </ng-template>
+    </app-marker-clusterer>
+
+
+
+    <!-- <app-marker-clusterer
+      [map]="map"
+      [points]="points"
+      [algorithm]="'grid'"
+      [gridSize]="200"
+      [maxZoom]="18"
+    >
+
+      <ng-template
+        #marker
+        let-point
+      >
+        <div class="pin">
+          <span class="dot"></span>
+        </div>
+      </ng-template>
+
+      <ng-template
+        #cluster
+        let-count="count"
+        let-position="position"
+        let-markers="markers"
+      >
+        <div class="cluster-badge">
+          {{ count }}
+        </div>
+      </ng-template>
+
+    </app-marker-clusterer> -->
+    <!-- <map-marker
     *ngFor="let m of markers"
     [position]="m.position"
     [title]="m.title"
   ></map-marker> -->
-</google-map>
+  </google-map>
+</div>

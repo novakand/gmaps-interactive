@@ -1,0 +1,111 @@
+<div [formGroup]="form">
+    <p-autocomplete
+        formControlName="autocompleteValue"
+        fluid
+        appendTo="body"
+        optionLabel="description"
+        [showClear]="true"
+        (onSelect)="onSelectPlace($event)"
+        [forceSelection]="true"
+        placeholder="Enter address"
+        [suggestions]="autocompleteData"
+        (completeMethod)="search($event)"
+        (onClear)="onClear()"
+    />
+
+    <div class="grid">
+        <div class="col-span-12 lg:col-span-12 h-full">
+            <div class="grid grid-cols-12 gap-4">
+                <ng-container>
+                    <div class="col-span-12">
+
+                        <div class="flex justify-between items-center mb-3 ">
+                            <div> and <p-button
+                                    label="place a point on the map"
+                                    (click)="onSelectCenter()"
+                                    link
+                                /> </div>
+                        </div>
+
+                        <div class="flex justify-between items-center mb-3 ">
+                            <p-selectbutton
+                                fluid
+                                formControlName="modeValue"
+                                [options]="drivingOptions"
+                                styleClass="w-full"
+                            />
+                        </div>
+
+                        <div class="flex justify-between items-center mb-3 ">
+                            <div> Maximum travel time: {{ form.get('timeValue')?.value }} min </div>
+                        </div>
+                        <div class="flex justify-between items-center mb-3 mt-4  ">
+                            <p-slider
+                                formControlName="timeValue"
+                                [min]="5"
+                                [max]="60"
+                                class="w-full mt-3"
+                            />
+                        </div>
+
+                        <div class="mt-4 w-full">
+                            <p-button
+                                label="Calculate"
+                                [raised]="true"
+                                (onClick)="calculateIsochrone()"
+                                [disabled]="form.invalid"
+                                styleClass="w-full justify-center"
+                            />
+                        </div>
+
+
+                    </div>
+                </ng-container>
+
+            </div>
+        </div>
+
+    </div>
+
+    <ng-container *ngIf="selectedMarker as m">
+        <!-- HTML контент для AdvancedMarker -->
+        <div
+            #selectedPin
+            class="adv-pin"
+            style="filter: drop-shadow(0 4px 12px rgba(0,0,0,.25)); pointer-events:none"
+        >
+            <svg
+                viewBox="0 0 44 56"
+                aria-hidden="true"
+                class="w-11 h-14 block"
+            >
+                <!-- капля без обводок -->
+                <path
+                    [attr.fill]="'#E33D33'"
+                    d="M22 4
+           C12 4 4 12 4 22
+           C4 30 14 43 22 52
+           C30 43 40 30 40 22
+           C40 12 32 4 22 4Z"
+                />
+                <!-- круг по центру -->
+                <circle
+                    cx="22"
+                    cy="22"
+                    r="6"
+                    fill="#fff"
+                ></circle>
+            </svg>
+        </div>
+
+        <!-- Сам AdvancedMarker получает ссылку на content -->
+        <map-advanced-marker
+            [position]="m.position"
+            [gmpDraggable]="true"
+            (mapDragend)="onMarkerDragEnd($event)"
+            [title]="m.title || 'Selected point'"
+            [content]="selectedPin"
+        ></map-advanced-marker>
+    </ng-container>
+
+</div>

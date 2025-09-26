@@ -1,9 +1,72 @@
-<app-map-controls position="TOP_RIGHT">
+<!-- <app-map-controls position="TOP_RIGHT">
   <app-map-control>
     <button type="button"  (click)="toggleDraw()" class="gm-control-button">
       Draw
     </button>
   </app-map-control>
-</app-map-controls>
+</app-map-controls> -->
 
+<!-- <div class="flex items-center">
+    <p-togglebutton
+        pButton
+        [(ngModel)]="isDraw"
+        iconPos="right"
+        [allowEmpty]="true"
+        onLabel=""
+        (onChange)="onDrawChange($event)"
+        offLabel=""
+        styleClass="icon-only-toggle p-button-icon-only p-button-map my-0 mx-4"
+        [style]="{'width': '38px', 'height': '38px'}"
+    >
+        <ng-template
+            #icon
+            let-checked
+        >
+            <span
+                class="material-symbols-outlined"
+                [class.filled]="checked"
+            >
+                polyline
+            </span>
+        </ng-template>
+    </p-togglebutton>
+
+    <p-togglebutton
+        pButton
+        [(ngModel)]="isEdit"
+        iconPos="right"
+        [allowEmpty]="true"
+        [disabled]="!(shapeExists$ | async)"
+        onLabel=""
+        (onChange)="onEditChange($event)"
+        offLabel=""
+        styleClass="icon-only-toggle p-button-icon-only p-button-map my-0 mx-4"
+        [style]="{'width': '38px', 'height': '38px'}"
+    >
+        <ng-template
+            #icon
+            let-checked
+        >
+            <span
+                class="material-symbols-outlined"
+                [class.filled]="checked"
+            >
+                edit
+            </span>
+        </ng-template>
+    </p-togglebutton>
+    <p-button
+        (click)="onRemove()"
+        [disabled]="!(shapeExists$ | async)"
+        [style]="{'width': '38px', 'height': '38px'}"
+        styleClass="p-button-map my-0 mx-4"
+    >
+        <ng-template pTemplate="icon">
+            <span class="material-symbols-outlined">
+                delete
+            </span>
+        </ng-template>
+    </p-button>
+</div>
+ -->
 

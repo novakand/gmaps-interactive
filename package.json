@@ -8,6 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "build:gh": "ng build --configuration=ghpages",
     "build:django": "ng build --configuration=django",
+    "gen:jobs": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' ./scripts/generate-jobs-spain.ts",
     "test": "ng test"
   },
   "prettier": {
@@ -32,9 +33,14 @@
     "@angular/platform-browser": "^20.3.0",
     "@angular/router": "^20.3.0",
     "@googlemaps/markerclusterer": "^2.6.2",
+    "@primeuix/themes": "^1.2.3",
+    "@turf/bbox": "^7.2.0",
     "@turf/helpers": "^7.2.0",
+    "@turf/points-within-polygon": "^6.5.0",
     "@turf/simplify": "^3.5.2",
+    "primeng": "^20.1.2",
     "rxjs": "~7.8.0",
+    "tailwindcss-primeui": "^0.6.1",
     "terra-draw": "^1.15.0",
     "terra-draw-google-maps-adapter": "^1.0.4",
     "tslib": "^2.3.0",
@@ -45,6 +51,7 @@
     "@angular/build": "^20.3.2",
     "@angular/cli": "^20.3.2",
     "@angular/compiler-cli": "^20.3.0",
+    "@tailwindcss/postcss": "^4.1.13",
     "@types/google.maps": "^3.58.1",
     "@types/jasmine": "~5.1.0",
     "jasmine-core": "~5.9.0",
@@ -53,6 +60,8 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.13",
     "typescript": "~5.9.2"
   }
 }

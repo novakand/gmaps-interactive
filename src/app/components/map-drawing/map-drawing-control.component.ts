@@ -11,21 +11,26 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BehaviorSubject, forkJoin, from, Observable, Subject, Subscription } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { BehaviorSubject, forkJoin, from, fromEvent, merge, Observable, Subject, Subscription } from 'rxjs';
+import { distinctUntilChanged, filter, map, scan, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 import { GoogleMap, MapEventManager } from '@angular/google-maps';
 import { simplify } from "@turf/simplify";
 import { Feature, FeatureCollection, GeoJsonProperties, Geometry } from 'geojson';
 import { featureCollection, feature } from "@turf/helpers";
 import { MapControlComponent } from '../map-control/map-control.component';
 import { MapControlsComponent } from '../map-controls/map-controls.component';
+import { ToggleButtonModule } from 'primeng/togglebutton';
+import { ButtonModule } from 'primeng/button';
 @Component({
   selector: 'map-drawing-control',
   templateUrl: './map-drawing-control.component.html',
   styleUrls: ['./map-drawing-control.component.scss'],
+  standalone:true,
   imports: [
     CommonModule,
     FormsModule,
+    ButtonModule,
+    ToggleButtonModule,
     MapControlsComponent, MapControlComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,7 +44,7 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
 
   public readonly _map: GoogleMap = inject(GoogleMap);
   private readonly _ngZone = inject(NgZone);
-  private _gmap!: google.maps.Map;
+  public map!: google.maps.Map;
 
   private readonly _geoJson = new BehaviorSubject<Feature | FeatureCollection | null>(null);
   private readonly _style = new BehaviorSubject<google.maps.Data.StyleOptions>({});
@@ -52,29 +57,51 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
   private _eventManagerDrawing = new MapEventManager(this._ngZone);
   private _eventManagerDataLayer = new MapEventManager(this._ngZone);
 
-  /** Новый тип рисования */
   @Input() public drawMode = 'freehand';
   @Input() public allowMultiple = false;
 
-  // временные сущности для freehand (mouse + touch через Pointer Events)
   private _freehandPolyline?: google.maps.Polyline;
-  private _freehandMoveL?: google.maps.MapsEventListener; // (оставлено для совместимости, сейчас не используется)
-  private _freehandUpL?: google.maps.MapsEventListener;   // (оставлено для совместимости, сейчас не используется)
-  private _freehandDownL?: google.maps.MapsEventListener; // (оставлено для совместимости, сейчас не используется)
+  private _freehandMoveL?: google.maps.MapsEventListener;
+  private _freehandUpL?: google.maps.MapsEventListener;
+  private _freehandDownL?: google.maps.MapsEventListener;
 
-  // ★ OverlayView для проекции пикселей → LatLng
   private _overlayView?: google.maps.OverlayView;
   private _activePointerId?: number;
 
-  // ★ pointer listeners (DOM)
   private _ptrDown?: (e: PointerEvent) => void;
   private _ptrMove?: (e: PointerEvent) => void;
   private _ptrUp?: (e: PointerEvent) => void;
 
   @Input() public isDisabledControl = false;
   @Input() public isShowControl = true;
-  @Input() public tolerance: number = 0.01;
-  @Input() public fitBounds = true;
+  @Input() public tolerance = 0.01;
+  @Input() public fitBounds = false;
+
+  constructor(private cd: ChangeDetectorRef) {}
+
+  private static readonly DEFAULT_DATA_STYLE: google.maps.Data.StyleOptions = {
+    strokeColor: '#1a73e8',
+    strokeOpacity: 1,
+    strokeWeight: 2,
+    fillColor: '#1a73e8',
+    fillOpacity: 0.2,
+    editable: false,
+    visible: true,
+  };
+
+  private _applyDataStyle(extra?: Partial<google.maps.Data.StyleOptions>): void {
+    if (!this.dataLayer) return;
+    const merged = {
+      ...MapDrawingComponent.DEFAULT_DATA_STYLE,
+      ...this._style.getValue(),
+      ...(extra || {}),
+    };
+    this.dataLayer.setStyle(merged);
+  }
+
+  private _setEditable(editable: boolean): void {
+    this._applyDataStyle({ editable });
+  }
 
   @Input()
   set geoJson(geometry: Feature | FeatureCollection | null) {
@@ -95,14 +122,10 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
   @Output() readonly removeFeature: Observable<google.maps.Data.SetGeometryEvent> =
     this._eventManagerDataLayer.getLazyEmitter<google.maps.Data.SetGeometryEvent>('removefeature');
 
-  constructor(private cd: ChangeDetectorRef) { }
-
   ngOnInit(): void {
     if (this._map._isBrowser) {
       this._ngZone.runOutsideAngular(() => {
-        forkJoin({
-          map: from(this._map._resolveMap()),
-        }).subscribe(({ map }) => {
+        forkJoin({ map: from(this._map._resolveMap()) }).subscribe(({ map }) => {
           this._initialize(map);
         });
       });
@@ -110,18 +133,18 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
   }
 
   private _initialize(map: google.maps.Map): void {
-    this._gmap = map;
+    this.map = map;
 
     this._ngZone.runOutsideAngular(() => {
       this.dataLayer = new google.maps.Data({ map });
       this._eventManagerDataLayer.setTarget(this.dataLayer);
       this._eventManager.setTarget(map);
-      this.dataLayer.setStyle({ ...this._style.getValue(), editable: false });
+      this._applyDataStyle();
 
       this._overlayView = new google.maps.OverlayView();
-      this._overlayView.onAdd = () => { };
-      this._overlayView.onRemove = () => { };
-      this._overlayView.draw = () => { };
+      this._overlayView.onAdd = () => {};
+      this._overlayView.onRemove = () => {};
+      this._overlayView.draw = () => {};
       this._overlayView.setMap(map);
 
       this._watchForGeoJsonChanges();
@@ -140,40 +163,45 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
     this._removeDownListener();
   }
 
-  /** ── реакция на входные модели ── */
   private _watchForStyleChanges(): void {
-    this._style.pipe(takeUntil(this._destroy$)).subscribe(style => {
-      if (!style || !this.dataLayer) return;
-      this.dataLayer.setStyle(style);
-    });
+    this._style
+      .pipe(
+        takeUntil(this._destroy$),
+        distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b))
+      )
+      .subscribe(() => this._applyDataStyle());
   }
-
-
 
   private _watchForGeoJsonChanges(): void {
-    this._geoJson.pipe(takeUntil(this._destroy$)).subscribe(geoJson => {
-      console.log('_watchForGeoJsonChanges')
-      if (!geoJson || !this.dataLayer) return;
+    this._geoJson
+      .pipe(
+        takeUntil(this._destroy$),
+        filter((g): g is Feature | FeatureCollection => !!g)
+      )
+      .subscribe(geoJson => {
+        const simplified = this.simplifyFeatureCollection(geoJson, this.tolerance);
+        this._removeAllFeaturesSafe();
+        const features = this.dataLayer!.addGeoJson(simplified);
 
-      const simplified = this.simplifyFeatureCollection(geoJson, this.tolerance);
+        this._setEditable(false);
 
-      this.dataLayer.forEach(f => this.dataLayer!.remove(f));
-      const features = this.dataLayer.addGeoJson(simplified);
-
-      this.dataLayer.setStyle({ ...this._style.getValue(), editable: false });
-
-      if (this.fitBounds && features.length > 0) {
-        const bounds = new google.maps.LatLngBounds();
-        features.forEach(f => this.extendBoundsFromFeature(f, bounds));
-        this._map.googleMap?.fitBounds(bounds);
-      }
-    });
+        if (this.fitBounds && features.length > 0) {
+          const bounds = new google.maps.LatLngBounds();
+          features.forEach(f => this.extendBoundsFromFeature(f, bounds));
+          this._map.googleMap?.fitBounds(bounds);
+        }
+      });
   }
 
-  /** ── утилита: расширить bounds по фиче Data ── */
+   private _removeAllFeaturesSafe(): void {
+    if (!this.dataLayer) return;
+    const toRemove: google.maps.Data.Feature[] = [];
+    this.dataLayer?.forEach(f => toRemove?.push(f));
+    toRemove?.forEach(f => this.dataLayer?.remove(f));
+  }
+
   private extendBoundsFromFeature(feature: google.maps.Data.Feature, bounds: google.maps.LatLngBounds): void {
     const geometry = feature.getGeometry();
-
     if (geometry?.getType() === 'Polygon') {
       const polygon = geometry as google.maps.Data.Polygon;
       polygon.getArray().forEach((ring: google.maps.Data.LinearRing) => {
@@ -189,14 +217,12 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
     }
   }
 
-
-  // ★ Конвертация координат указателя в LatLng через OverlayView
   private _latLngFromPointer(e: PointerEvent): google.maps.LatLng | null {
-    if (!this._gmap || !this._overlayView) return null;
+    if (!this.map || !this._overlayView) return null;
     const proj = this._overlayView.getProjection();
     if (!proj) return null;
 
-    const rect = (this._gmap.getDiv() as HTMLElement).getBoundingClientRect();
+    const rect = (this.map.getDiv() as HTMLElement).getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
@@ -204,31 +230,25 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
     return ll ?? null;
   }
 
-  // ★ Обновлённый freehand: единый путь для мыши/тача (Pointer Events)
   private _startFreehand(): void {
-    if (!this._gmap) return;
+    if (!this.map) return;
 
-    // выключим редактирование и DrawingManager
-    this.dataLayer?.setStyle({ ...this._style.getValue(), editable: false });
+    this._setEditable(false);
 
-    // подготовим карту к рисованию
-    this._gmap.setOptions({
+    this.map.setOptions({
       clickableIcons: false,
       draggable: false,
       gestureHandling: 'none' as any,
       disableDoubleClickZoom: true,
     });
-    this._gmap.set('draggableCursor', 'crosshair');
+    this.map.set('draggableCursor', 'crosshair');
 
-    const div = this._gmap.getDiv() as HTMLElement;
-
-    // Блокируем нативные жесты внутри карты
+    const div = this.map.getDiv() as HTMLElement;
     const prevTouchAction = div.style.touchAction;
     div.style.touchAction = 'none';
 
-    // создаём временную ломаную
     const polyOpts: google.maps.PolylineOptions = {
-      map: this._gmap,
+      map: this.map,
       strokeColor: this._style.getValue()?.strokeColor,
       strokeOpacity: this._style.getValue()?.strokeOpacity,
       strokeWeight: this._style.getValue()?.strokeWeight,
@@ -239,11 +259,11 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
     const path = this._freehandPolyline.getPath();
 
     this._ptrDown = (ev: PointerEvent) => {
-      if (this._activePointerId != null) return; // уже рисуем другим указателем
-      if (ev.pointerType === 'mouse' && ev.buttons !== 1) return; // только ЛКМ
+      if (this._activePointerId != null) return;
+      if (ev.pointerType === 'mouse' && ev.buttons !== 1) return;
 
       this._activePointerId = ev.pointerId;
-      try { (div as any).setPointerCapture?.(ev.pointerId); } catch { }
+      try { (div as any).setPointerCapture?.(ev.pointerId); } catch {}
       ev.preventDefault();
 
       const ll = this._latLngFromPointer(ev);
@@ -260,7 +280,7 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
 
     const finish = () => {
       if (this._activePointerId != null && (div as any).hasPointerCapture?.(this._activePointerId)) {
-        try { (div as any).releasePointerCapture(this._activePointerId); } catch { }
+        try { (div as any).releasePointerCapture(this._activePointerId); } catch {}
       }
       this._activePointerId = undefined;
 
@@ -283,7 +303,7 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
         if (lng0 !== lngN || lat0 !== latN) ring.push([lng0, lat0]);
 
         if (!this.allowMultiple) {
-          this.dataLayer?.forEach(f => this.dataLayer!.remove(f));
+          this._removeAllFeaturesSafe();
         }
 
         const features = this.dataLayer!.addGeoJson(
@@ -298,13 +318,12 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
         }
       }
 
-      // вернуть поведение карты
-      this._gmap.setOptions({
+      this.map.setOptions({
         draggable: true,
         gestureHandling: 'auto' as any,
         disableDoubleClickZoom: false,
       });
-      this._gmap.set('draggableCursor', null);
+      this.map.set('draggableCursor', null);
       div.style.touchAction = prevTouchAction;
 
       this.isDraw = false;
@@ -317,7 +336,6 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
       finish();
     };
 
-    // навешиваем pointer-слушатели
     div.addEventListener('pointerdown', this._ptrDown, { passive: false, capture: true });
     div.addEventListener('pointermove', this._ptrMove, { passive: false, capture: true });
     window.addEventListener('pointerup', this._ptrUp, { passive: false, capture: true });
@@ -326,15 +344,15 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
 
   private _cancelFreehand(): void {
     this._stopFreehandListeners();
-    this._gmap?.setOptions?.({ draggableCursor: null, draggable: true, gestureHandling: 'auto' as any });
-    const div = this._gmap?.getDiv?.() as HTMLElement | undefined;
+    this.map?.setOptions?.({ draggableCursor: null, draggable: true, gestureHandling: 'auto' as any });
+    const div = this.map?.getDiv?.() as HTMLElement | undefined;
     if (div) div.style.touchAction = '';
   }
 
   private _stopFreehandListeners(): void {
     this._stopFreehandListenersExceptDown();
 
-    const div = this._gmap?.getDiv?.() as HTMLElement | undefined;
+    const div = this.map?.getDiv?.() as HTMLElement | undefined;
     if (div) {
       if (this._ptrDown) div.removeEventListener('pointerdown', this._ptrDown, { capture: true } as any);
       if (this._ptrMove) div.removeEventListener('pointermove', this._ptrMove, { capture: true } as any);
@@ -361,7 +379,6 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
       this._freehandPolyline.setMap(null);
       this._freehandPolyline = undefined;
     }
-    // _freehandDownL оставлен, но не используется в Pointer-варианте
   }
 
   private _removeDownListener(): void {
@@ -369,37 +386,25 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
     this._freehandDownL = undefined;
   }
 
-  /** ── Команды из UI ── */
   public onEdit(): void {
-    if (this.dataLayer) {
-      this.dataLayer.setStyle({ ...this._style.getValue(), editable: true });
-    }
+    this._setEditable(true);
     this._cancelFreehand();
   }
 
   public onStop(): void {
-    if (this.dataLayer) {
-      this.dataLayer.setStyle({ ...this._style.getValue(), editable: false });
-    }
+    this._setEditable(false);
   }
 
   public onRemove(): void {
-    if (this.dataLayer) {
-      this.dataLayer.forEach(f => this.dataLayer!.remove(f));
-    }
+    this._removeAllFeaturesSafe();
     this.shapeExists$.next(false);
   }
 
   public onDraw(): void {
-    if (this.dataLayer) {
-      this.dataLayer.setStyle({ ...this._style.getValue(), editable: false });
-    }
-    if (this.drawMode === 'manager') {
-      if (!this.allowMultiple) this.onRemove();
-    } else {
+    this._setEditable(false);
+   
       if (!this.allowMultiple) this.onRemove();
       this._startFreehand();
-    }
     this.cd.detectChanges();
   }
 
@@ -411,27 +416,19 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
 
   public onDrawChange(event: { checked: boolean } | boolean): void {
     const on = typeof event === 'boolean' ? event : !!event?.checked;
-
-
     if (on) {
       if (!this.allowMultiple) this.onRemove();
       this._startFreehand();
     } else {
       this._cancelFreehand();
     }
-
   }
 
   public onEditChange({ checked }: { checked: boolean }): void {
-    if (this.dataLayer) {
-      this.dataLayer.setStyle({ ...this._style.getValue(), editable: checked });
-    }
-    if (checked) {
-      this._cancelFreehand();
-    }
+    this._setEditable(checked);
+    if (checked) this._cancelFreehand();
   }
 
-  /** ── GeoJSON утилиты ── */
   private simplifyFeatureCollection(
     input: Feature | FeatureCollection,
     baseTolerance: number
@@ -455,9 +452,9 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
 
         const adjustedTolerance =
           pointCount > 500 ? baseTolerance :
-            pointCount > 200 ? baseTolerance * 0.5 :
-              pointCount > 100 ? baseTolerance * 0.3 :
-                pointCount > 50 ? baseTolerance * 0.1 : 0;
+          pointCount > 200 ? baseTolerance * 0.5 :
+          pointCount > 100 ? baseTolerance * 0.3 :
+          pointCount > 50  ? baseTolerance * 0.1 : 0;
 
         const simplified = simplify(f as any, { tolerance: adjustedTolerance, highQuality: false, mutate: false }) as any;
 
@@ -514,13 +511,12 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
 }
 
 
-/**
- * Final: Freehand-only drawing (mobile + desktop) using Pointer Events and RxJS
- * - No DrawingManager
- * - Single implementation for mouse/touch/pen
- * - Projection via OverlayView
- * - Reactive pointer stream, rAF throttling, optional pixel step
- */
+
+
+
+
+
+
 
 
 

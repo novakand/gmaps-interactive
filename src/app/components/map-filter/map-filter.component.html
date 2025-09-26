@@ -1,0 +1,53 @@
+<div *ngIf="form" [formGroup]="form" class="grid gap-4">
+
+  <div class="col-span-12">
+    <label class="block mb-2 font-medium">Type</label>
+    <p-autocomplete
+      formControlName="type"
+      [multiple]="true"
+      fluid
+      [suggestions]="typeSuggestions"
+      (completeMethod)="searchType($event)"
+      [dropdown]="true"
+      [showClear]="true"
+      [forceSelection]="false"
+      placeholder="Select types"
+    >
+    </p-autocomplete>
+  </div>
+
+  <div class="col-span-12">
+    <label class="block mb-2 font-medium">Employment</label>
+    <p-autocomplete
+      formControlName="employment"
+      [multiple]="true"
+      [suggestions]="employmentSuggestions"
+      (completeMethod)="searchEmployment($event)"
+      [dropdown]="true"
+      fluid
+      [showClear]="true"
+      [forceSelection]="false"
+      placeholder="Select employment types"
+    >
+    </p-autocomplete>
+  </div>
+
+  <div class="col-span-12">
+    <div class="flex items-center justify-between mb-2">
+      <label class="font-medium">Salary (EUR)</label>
+      <span>{{ f.salaryRange.value?.[0] | number }} — {{ f.salaryRange.value?.[1] | number }}</span>
+    </div>
+
+    <p-slider
+      formControlName="salaryRange"
+      [range]="true"
+      [min]="salaryMin"
+      [max]="salaryMax"
+      [step]="salaryStep"
+      class="w-full"
+    ></p-slider>
+
+  </div>
+
+
+</div>

@@ -1,0 +1,47 @@
+<div>
+        <p-button
+                [disabled]="isDisabledZoomIn"
+                (click)="onZoomInChange()"
+                [style]="{'width': '38px', 'height': '38px', 'border-bottom-left-radius': 0,'border-bottom-right-radius': 0}"
+                styleClass="p-button-map"
+                icon="pi pi-plus"
+        >
+                <ng-template
+                        #icon
+                        let-checked
+                >
+
+                        <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                style="color: var(--p-surface-700);"
+                                viewBox="0 0 960 960"
+                                width="16"
+                                height="16"
+                        >
+                                <path
+                                        d="M428.5714285714285 533.4285714285713H0v-102.85714285714285h428.57142857142856v-428.57142857142856h102.85714285714285v428.57142857142856h428.57142857142856v102.85714285714285H531.4285714285713v428.57142857142856h-102.85714285714285v-428.57142857142856Z" />
+                        </svg>
+
+                </ng-template> </p-button>
+        <p-button
+                [disabled]="isDisabledZoomOut"
+                (click)="onZoomOutChange()"
+                [style]="{'width': '38px', 'height': '38px','border-top-left-radius': 0,'border-top-right-radius': 0,}"
+                styleClass="border-top-none p-button-map"
+                icon="pi pi-minus"
+        > <ng-template
+                        #icon
+                        let-checked
+                >
+                        <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                style="color: var(--p-surface-700);"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 960 960"
+                        >
+                                <path d="M0 533.4285714285714v-102.85714285714285h960v102.85714285714285H0Z" />
+                        </svg>
+
+                </ng-template></p-button>
+</div>
