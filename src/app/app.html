@@ -10,7 +10,7 @@
     <div class="c-map-toolbar-horizontal">
       <p-button
         label="Filter"
-        styleClass="p-button-map"
+        styleClass="p-button-map text-base max-[480px]:text-xs"
         (click)="onVisibleFilterChange(isFilterVisible)"
         [outlined]="true"
       >
@@ -46,7 +46,7 @@
   "
           [outlined]="true"
           [disabled]="!totalCount"
-          styleClass="p-button-map"
+          styleClass="p-button-map text-base max-[480px]:text-xs"
         >
         </p-button>
 
@@ -125,7 +125,7 @@
       [closable]="false"
       modal="false"
       appendTo=""
-      styleClass="p-drawer-bottom-append h-[25rem]!"
+      styleClass="p-drawer-bottom-append h-[25rem]! "
       [modal]="false"
       (visibleChange)="onVisibleChange($event)"
       position="bottom"

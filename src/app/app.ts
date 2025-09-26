@@ -99,7 +99,7 @@ export class App {
     zoom: 10,
     disableDefaultUI: true,
     minZoom: 3,
-    restriction: { strictBounds: false, latLngBounds: { north: 83.8, south: -83.8, west: -180, east: 180 } },
+    // restriction: { strictBounds: false, latLngBounds: { north: 83.8, south: -83.8, west: -180, east: 180 } },
     mapId: 'a870aaade7ac6f22',
     gestureHandling: 'greedy',
     clickableIcons: false

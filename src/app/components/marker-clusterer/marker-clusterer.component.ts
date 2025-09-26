@@ -1,5 +1,5 @@
 import {
-    AfterContentInit,
+  AfterContentInit,
   ApplicationRef,
   Component,
   ContentChild,
@@ -22,44 +22,32 @@ export type ClusterPoint = {
 @Component({
   selector: 'app-marker-clusterer',
   standalone: true,
-  template: '' // слой без UI
+  template: ''
 })
 export class MarkerClustererComponent implements OnChanges, OnDestroy, AfterContentInit {
-  /** Карта */
+
   @Input() map: google.maps.Map | null | undefined;
-
-  /** Точки */
   @Input() points: ClusterPoint[] = [];
-
-  /** Алгоритм: 'grid' | 'super' */
   @Input() algorithm: 'grid' | 'super' = 'super';
+  @Input() maxZoom?: number;
+  @Input() gridSize = 60;
+  @Input() radius = 200;
+  @Input() minPoints = 2;
 
-  // Параметры алгоритмов
-  @Input() maxZoom?: number;   // общий
-  @Input() gridSize = 60;      // GridAlgorithm
-  @Input() radius = 200;       // SuperClusterAlgorithm
-  @Input() minPoints = 2;      // SuperClusterAlgorithm
-
-  /** Шаблон маркера (HTML для AdvancedMarkerElement) */
   @ContentChild('marker', { read: TemplateRef, static: true })
   markerTpl?: TemplateRef<any>;
 
-  /** Шаблон кластера (HTML для AdvancedMarkerElement) */
   @ContentChild('cluster', { read: TemplateRef, static: true })
   clusterTpl?: TemplateRef<any>;
 
   private contentReady = false;
   private clusterer?: MarkerClusterer;
-
-  // ⚠️ только AdvancedMarkerElement
   private markerInstances: google.maps.marker.AdvancedMarkerElement[] = [];
   private markerViews: EmbeddedViewRef<any>[] = [];
   private clusterViews: EmbeddedViewRef<any>[] = [];
-
-  // дебаунс перестройки
   private rebuildScheduled = false;
 
-  constructor(private appRef: ApplicationRef, private ngZone: NgZone) {}
+  constructor(private appRef: ApplicationRef, private ngZone: NgZone) { }
 
   ngAfterContentInit(): void {
     this.contentReady = true;
@@ -69,12 +57,9 @@ export class MarkerClustererComponent implements OnChanges, OnDestroy, AfterCont
   ngOnChanges(changes: SimpleChanges): void {
     if (!this.contentReady) return;
 
-    // мелкая оптимизация: если нет карты — смысла нет
     if (changes['map'] && !this.map) return;
 
-    // Если points ссылка та же и не менялись другие входы — не перестраиваем
     if (changes['points'] && changes['points'].previousValue === changes['points'].currentValue) {
-      // пропускаем; другие входы всё равно могут триггерить
     }
 
     this.scheduleRebuild();
@@ -94,7 +79,6 @@ export class MarkerClustererComponent implements OnChanges, OnDestroy, AfterCont
     }
   }
 
-  /** Планирует rebuild в конце тика (склеивает множественные изменения) */
   private scheduleRebuild() {
     if (this.rebuildScheduled) return;
     this.rebuildScheduled = true;
@@ -107,33 +91,26 @@ export class MarkerClustererComponent implements OnChanges, OnDestroy, AfterCont
   private rebuild() {
     if (!this.map) return;
     this.ensureAdvancedAvailable();
-
-    // тяжёлую работу — вне Angular
     this.ngZone.runOutsideAngular(() => {
       this.destroyClusterer();
 
-      // Маркеры (AdvancedMarkerElement)
       this.markerInstances = this.points.map((p) => this.createAdvancedMarker(p));
-
-      // Алгоритм
       const algorithm =
         this.algorithm === 'super'
           ? new SuperClusterAlgorithm({
-              maxZoom: this.maxZoom,
-              radius: this.radius,
-              minPoints: this.minPoints,
-            })
+            maxZoom: this.maxZoom,
+            radius: this.radius,
+            minPoints: this.minPoints,
+          })
           : new GridAlgorithm({
-              maxZoom: this.maxZoom,
-              gridSize: this.gridSize,
-            });
+            maxZoom: this.maxZoom,
+            gridSize: this.gridSize,
+          });
 
-      // Рендерер кластеров (тоже AdvancedMarkerElement)
       const renderer = {
         render: (args: any) => {
           const { count, position, markers } = args;
 
-          // Если есть шаблон — рендерим как раньше (с Angular View)
           if (this.clusterTpl) {
             const { el } = this.renderTemplate(
               this.clusterTpl,
@@ -143,17 +120,18 @@ export class MarkerClustererComponent implements OnChanges, OnDestroy, AfterCont
             return new google.maps.marker.AdvancedMarkerElement({
               position,
               content: el,
+              gmpClickable: true,
               zIndex: 100 + count,
+              collisionBehavior: 'REQUIRED_AND_HIDES_OPTIONAL' as any
             });
           }
-
-          // Иначе — лёгкий DOM без Angular View (быстрее)
           const el = this.createDefaultClusterEl(count);
           return new google.maps.marker.AdvancedMarkerElement({
             position,
             content: el,
             zIndex: 100 + count,
             gmpClickable: true,
+            collisionBehavior: 'REQUIRED_AND_HIDES_OPTIONAL' as any
           });
         },
       };
@@ -168,7 +146,6 @@ export class MarkerClustererComponent implements OnChanges, OnDestroy, AfterCont
   }
 
   private createAdvancedMarker(p: ClusterPoint) {
-    // Если пользователь дал шаблон — рендерим как раньше
     if (this.markerTpl) {
       const { el } = this.renderTemplate(this.markerTpl, { $implicit: p, point: p }, 'marker');
       return new google.maps.marker.AdvancedMarkerElement({
@@ -179,7 +156,6 @@ export class MarkerClustererComponent implements OnChanges, OnDestroy, AfterCont
       });
     }
 
-    // Иначе — лёгкий DOM (без Angular View) => сильно быстрее
     const el = this.createDefaultPinEl(p);
     return new google.maps.marker.AdvancedMarkerElement({
       position: p.position,
@@ -189,7 +165,6 @@ export class MarkerClustererComponent implements OnChanges, OnDestroy, AfterCont
     });
   }
 
-  /** Рендерит ng-template в HTMLElement и подключает View к Angular CD (как было) */
   private renderTemplate<T>(
     tpl: TemplateRef<T>,
     context: T,
@@ -203,7 +178,6 @@ export class MarkerClustererComponent implements OnChanges, OnDestroy, AfterCont
     return { el: container, view };
   }
 
-  /** Лёгкий pin-элемент (если #marker не задан) */
   private createDefaultPinEl(p: ClusterPoint): HTMLElement {
     const root = document.createElement('div');
     root.className = 'pin';
@@ -213,7 +187,6 @@ export class MarkerClustererComponent implements OnChanges, OnDestroy, AfterCont
     return root;
   }
 
-  /** Лёгкий элемент кластера (если #cluster не задан) */
   private createDefaultClusterEl(count: number): HTMLElement {
     const el = document.createElement('div');
     el.className = 'cluster-badge';
@@ -228,11 +201,9 @@ export class MarkerClustererComponent implements OnChanges, OnDestroy, AfterCont
       this.clusterer = undefined;
     }
 
-    // AdvancedMarkerElement: снять с карты
     for (const m of this.markerInstances) (m as any).map = null;
     this.markerInstances = [];
 
-    // если создавали Angular View (только когда есть шаблоны) — почистить
     for (const v of this.markerViews) {
       this.appRef.detachView(v);
       v.destroy();

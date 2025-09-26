@@ -1,6 +1,7 @@
 /* You can add global styles to this file, and also import other style files */
 @import "tailwindcss";
 @plugin "tailwindcss-primeui";
+
 html,
 body {
   height: 100%;
@@ -20,15 +21,15 @@ body {
 
 
 :root {
-    --app-font: "Montserrat", system-ui, -apple-system, "Segoe UI",
-        Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji",
-        "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+  --app-font: "Montserrat", system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
 }
 
 body {
-    font-family: var(--app-font);
-    font-weight: 400;
-    line-height: 1.4;
+  font-family: var(--app-font);
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 
@@ -39,6 +40,15 @@ body {
   left: 1rem !important;
   width: 27rem !important;
   height: 30rem;
+}
+
+
+@media (max-width: 480px) {
+  .p-drawer-bottom-append {
+    max-width: 100dvw !important;
+    width: 100dvw;
+    left: 0 !important;
+  }
 }
 
 
@@ -110,13 +120,14 @@ body {
 }
 
 .p-button-map .p-togglebutton-checked .p-togglebutton-content {
-    background: transparent;
-    box-shadow: none;
+  background: transparent;
+  box-shadow: none;
 }
 
 .p-button-map .p-togglebutton-checked .p-togglebutton-content {
-    background: transparent !important;;
-    box-shadow: transparent !important;
+  background: transparent !important;
+  ;
+  box-shadow: transparent !important;
 }
 
 .p-button.p-button-map:not(:disabled):hover,
