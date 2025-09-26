@@ -71,11 +71,7 @@ export class App {
   private http = inject(HttpClient);
   public fullscreenClass = 'c-map';
   private destroyRef = inject(DestroyRef);
-  value3: string = 'Expert';
-  value5: number = 20;
-  public  allPointsFC!: FeatureCollection<Point, any>;
-  // отображение: то, что рисуем на карт
-  // индекс для быстрого доступа к вьюшке по id
+  public allPointsFC!: FeatureCollection<Point, any>;
   selectedPoint: { position: google.maps.LatLngLiteral; data: any } | null = null;
   selectedPointId: string | null = null;
   private pointById = new Map<string, any>()
@@ -83,12 +79,9 @@ export class App {
   public isFilterVisible = false;
   public isVisiblePanel = true;
   public isVisibleInwofindow = false;
-  private allPoints: Array<{ position: google.maps.LatLngLiteral; data?: any; color?: string }> = [];
   points: Array<{ position: google.maps.LatLngLiteral; data?: any; color?: string }> = [];
-  private clipPolys: google.maps.Polygon[] = [];
-  private clipBounds?: google.maps.LatLngBounds;
   private _destroy$ = new Subject<boolean>();
-  //icon: IconCenterComponent,  iconSelected
+
   justifyOptions: Array<{
     justify: Mode;
     icon: any;
@@ -101,7 +94,7 @@ export class App {
   // текущее значение (инициализируйте, чтобы не было undefined)
   value: Mode | null = null;
   totalCount = 0;
-  areaAllowedIds=null;
+  areaAllowedIds = null;
   // удобный хелпер (не обязателен)
   isSelected = (opt: { justify: Mode }) => this.value === opt.justify;
   options: google.maps.MapOptions = {
@@ -122,7 +115,7 @@ export class App {
     this._cdr.detectChanges();
   }
 
-   public onVisibleFilterChange(visible) {
+  public onVisibleFilterChange(visible) {
     this.isFilterVisible = !visible;
     this._cdr.detectChanges();
   }
@@ -132,7 +125,6 @@ export class App {
   toggleDrawer() { this.isVisible = !this.isVisible; }
 
   selectPoint(p: any) {
-    console.log('selectPoint', p)
     this.selectedPointId = p?.data?.id ?? null;
     this._cdr.detectChanges()
     this.selectedPoint = p;
@@ -150,19 +142,17 @@ export class App {
   constructor(
     private _loadProgressService: LoadProgressService,
     private _cdr: ChangeDetectorRef,
-    private fs: MapFilterStateService,  
+    private fs: MapFilterStateService,
 
   ) {
     this._watchForLoadProgress();
-     this._watchAttributeFilters();   
+    this._watchAttributeFilters();
 
   }
 
   public onChangesMode(event) {
-    console.log(event)
     event.value === 'draw' ? this.drawing.onDraw() : this.drawing.onRemove();
     event.value === 'isochrone' ? this.onVisibleChange(event.originalEvent.checked) : this.onVisibleChange(false)
-
   }
 
 
@@ -274,12 +264,6 @@ export class App {
 
   public onDraw(event) {
     event ? this.drawing.onDraw() : this.drawing.onRemove()
-    console.log(event, 'event')
-    // if (event) {
-    //   this.drawing.onDraw();
-    // } else {
-    //   this.drawing.onRemove(); // или this.drawing.onStop() / _cancelFreehand() по вашей логике
-    // }
   }
 
   public onAddFeature(_: google.maps.Data.AddFeatureEvent, src: AreaProvider) {
@@ -291,17 +275,16 @@ export class App {
     this.filterByArea(src);
   }
 
- public onRemoveFeature(_: google.maps.Data.RemoveFeatureEvent, _src: AreaProvider) {
-  this.areaAllowedIds = null; // нет ограничения по области
-  this.onClose(false);
-  this.isVisibleInwofindow = false;
+  public onRemoveFeature(_: google.maps.Data.RemoveFeatureEvent, _src: AreaProvider) {
+    this.areaAllowedIds = null; 
+    this.onClose(false);
+    this.isVisibleInwofindow = false;
 
-  const now = this.fs.applyOnce();
-  const ids = new Set(now.map(n => n?.properties?.id).filter(Boolean));
-  this.applyCombinedFilters(ids);
-}
+    const now = this.fs.applyOnce();
+    const ids = new Set(now.map(n => n?.properties?.id).filter(Boolean));
+    this.applyCombinedFilters(ids);
+  }
 
-  /** Общая функция для обоих источников */
   private filterByArea(src: AreaProvider) {
     src.getGeoJson$()
       .pipe(
@@ -313,41 +296,41 @@ export class App {
   }
 
   /** Оставляем точки, которые попадают внутрь нарисованных Polygon/MultiPolygon */
- private applyTurfClip(drawnFC: FeatureCollection) {
-  if (!this.allPointsFC) return;
+  private applyTurfClip(drawnFC: FeatureCollection) {
+    if (!this.allPointsFC) return;
 
-  const polys: Array<Feature<Polygon | MultiPolygon>> = [];
-  for (const f of drawnFC.features) {
-    const t = f.geometry?.type;
-    if (t === 'Polygon' || t === 'MultiPolygon') polys.push(f as any);
-  }
-  if (polys.length === 0) {
-    // нет валидной области — значит фильтра по области нет
-    this.areaAllowedIds = null;
-    // Пересчёт только по атрибутным фильтрам: пусть сервис отдаст текущие ids
+    const polys: Array<Feature<Polygon | MultiPolygon>> = [];
+    for (const f of drawnFC.features) {
+      const t = f.geometry?.type;
+      if (t === 'Polygon' || t === 'MultiPolygon') polys.push(f as any);
+    }
+    if (polys.length === 0) {
+      // нет валидной области — значит фильтра по области нет
+      this.areaAllowedIds = null;
+      // Пересчёт только по атрибутным фильтрам: пусть сервис отдаст текущие ids
+      const now = this.fs.applyOnce();
+      const ids = new Set(now.map(n => n?.properties?.id).filter(Boolean));
+      this.applyCombinedFilters(ids);
+      return;
+    }
+
+    const picked = new Set<string>();
+    for (const poly of polys) {
+      const insideFC = pointsWithinPolygon(this.allPointsFC, poly);
+      for (const pf of insideFC.features) {
+        const id = pf.properties?.id ?? '';
+        if (id) picked.add(id);
+      }
+    }
+
+    // сохранили «разрешённые по области» id
+    this.areaAllowedIds = picked;
+
+    // возьмём текущий атрибутный результат и пересчитаем
     const now = this.fs.applyOnce();
     const ids = new Set(now.map(n => n?.properties?.id).filter(Boolean));
     this.applyCombinedFilters(ids);
-    return;
   }
-
-  const picked = new Set<string>();
-  for (const poly of polys) {
-    const insideFC = pointsWithinPolygon(this.allPointsFC, poly);
-    for (const pf of insideFC.features) {
-      const id = pf.properties?.id ?? '';
-      if (id) picked.add(id);
-    }
-  }
-
-  // сохранили «разрешённые по области» id
-  this.areaAllowedIds = picked;
-
-  // возьмём текущий атрибутный результат и пересчитаем
-  const now = this.fs.applyOnce();
-  const ids = new Set(now.map(n => n?.properties?.id).filter(Boolean));
-  this.applyCombinedFilters(ids);
-}
 
 
   // public onAddFeature(data) {
@@ -383,7 +366,7 @@ export class App {
           this.pointById.set(id, view);
         }
         this.points = views; // старт: показываем все
-         this.fs.setItems(fc.features as any);
+        this.fs.setItems(fc.features as any);
         this._cdr.detectChanges()
       });
   }
