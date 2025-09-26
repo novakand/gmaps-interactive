@@ -30,7 +30,7 @@ import { MapFullscreenComponent } from './components/map-fullscreen/map-fullscre
 import { MapZoomControlComponent } from './components/map-zoom-control/map-zoom-control.component';
 import { MapFilterComponent } from './components/map-filter/map-filter.component';
 import { MapFilterStateService } from './components/map-filter/services/map-filter.service';
-type Tool = 'draw' | 'visible';
+
 type Mode = 'draw' | 'isochrone';
 export interface AreaProvider {
   /** Текущая область (Polygon/MultiPolygon) как FeatureCollection */
@@ -62,7 +62,6 @@ export interface AreaProvider {
   styleUrl: './app.scss'
 })
 export class App {
-  public showProgress: boolean = false;
   protected readonly title = signal('gmaps-ui');
   @ViewChild(GoogleMap) mapCmp!: GoogleMap;
   @ViewChild('drawing') drawing!: MapDrawingComponent;
@@ -91,11 +90,9 @@ export class App {
       { icon: IconIsochroneComponent, iconSelected: IconIsochroneSelectedComponent, justify: 'isochrone' }
     ];
 
-  // текущее значение (инициализируйте, чтобы не было undefined)
   value: Mode | null = null;
   totalCount = 0;
   areaAllowedIds = null;
-  // удобный хелпер (не обязателен)
   isSelected = (opt: { justify: Mode }) => this.value === opt.justify;
   options: google.maps.MapOptions = {
     center: { lat: 40.41622141966852, lng: -3.703246203018122 },
@@ -137,17 +134,13 @@ export class App {
     { position: { lat: 59.334591, lng: 18.06324 }, title: 'Center' },
   ];
 
-  activeTool: Tool | null = null;
-
   constructor(
     private _loadProgressService: LoadProgressService,
     private _cdr: ChangeDetectorRef,
     private fs: MapFilterStateService,
 
   ) {
-    this._watchForLoadProgress();
     this._watchAttributeFilters();
-
   }
 
   public onChangesMode(event) {
@@ -158,7 +151,6 @@ export class App {
 
   private _watchAttributeFilters() {
     this.fs.filtered$.subscribe(filteredItems => {
-      // соберём id из отфильтрованных элементов
       const ids = new Set<string>();
       for (const it of filteredItems ?? []) {
         const id = it?.properties?.id;
@@ -168,29 +160,19 @@ export class App {
     });
   }
 
-  /** общий пересчёт points с учётом areaAllowedIds ∩ attributeIds */
   private applyCombinedFilters(attributeIds: Set<string>) {
-    // если нет фильтра по области — берём только атрибутный набор
     const base = this.areaAllowedIds;
     const finalIds = base
       ? new Set([...attributeIds].filter(id => base.has(id)))
       : attributeIds;
 
-    // превращаем id → вьюхи (pointById собран ранее)
     const next: any[] = [];
     for (const id of finalIds) {
       const v = this.pointById.get(id);
       if (v) next.push(v);
     }
     this.points = next;
-    this._cdr.detectChanges();
-  }
-
-  private _watchForLoadProgress(): void {
-    this._loadProgressService.inProgress
-      .subscribe((progress: boolean) => {
-        this.showProgress = progress;
-      });
+    this._cdr.markForCheck();
   }
 
 
@@ -198,37 +180,9 @@ export class App {
     return this.points.length;
   }
 
-  /** есть ли активный фильтр области */
   get isFiltered(): boolean {
     return this.totalCount > 0 && this.shownCount < this.totalCount;
   }
-
-
-  private extendBoundsFromFeature(feature: google.maps.Data.Feature, bounds: google.maps.LatLngBounds): void {
-    const geometry = feature.getGeometry();
-    if (geometry?.getType() === 'Polygon') {
-      const polygon = geometry as google.maps.Data.Polygon;
-      polygon.getArray().forEach((ring: google.maps.Data.LinearRing) => {
-        ring.getArray().forEach((latlng: google.maps.LatLng) => bounds.extend(latlng));
-      });
-    } else if (geometry?.getType() === 'MultiPolygon') {
-      const multiPolygon = geometry as google.maps.Data.MultiPolygon;
-      multiPolygon.getArray().forEach((polygon: google.maps.Data.Polygon) => {
-        polygon.getArray().forEach((ring: google.maps.Data.LinearRing) => {
-          ring.getArray().forEach((latlng: google.maps.LatLng) => bounds.extend(latlng));
-        });
-      });
-    }
-  }
-
-  public fitBounds() {
-    //  if (this.fitBounds && features.length > 0) {
-    //       const bounds = new google.maps.LatLngBounds();
-    //       features.forEach(f => this.extendBoundsFromFeature(f, bounds));
-    //       this.map?.fitBounds(bounds);
-    //     }
-  }
-
 
   public onVisibleChange(visible: boolean): void {
     this.isVisible = visible;
@@ -249,7 +203,7 @@ export class App {
     strokeWeight: 2,
     fillColor: '#1a73e8',
     fillOpacity: 0.2,
-    editable: false,   // по умолчанию фигуры НЕ редактируем
+    editable: false,
     visible: true
   }
   items: any[] = [];
@@ -276,7 +230,7 @@ export class App {
   }
 
   public onRemoveFeature(_: google.maps.Data.RemoveFeatureEvent, _src: AreaProvider) {
-    this.areaAllowedIds = null; 
+    this.areaAllowedIds = null;
     this.onClose(false);
     this.isVisibleInwofindow = false;
 
@@ -295,7 +249,6 @@ export class App {
       .subscribe(fc => this.applyTurfClip(fc));
   }
 
-  /** Оставляем точки, которые попадают внутрь нарисованных Polygon/MultiPolygon */
   private applyTurfClip(drawnFC: FeatureCollection) {
     if (!this.allPointsFC) return;
 
@@ -305,9 +258,7 @@ export class App {
       if (t === 'Polygon' || t === 'MultiPolygon') polys.push(f as any);
     }
     if (polys.length === 0) {
-      // нет валидной области — значит фильтра по области нет
       this.areaAllowedIds = null;
-      // Пересчёт только по атрибутным фильтрам: пусть сервис отдаст текущие ids
       const now = this.fs.applyOnce();
       const ids = new Set(now.map(n => n?.properties?.id).filter(Boolean));
       this.applyCombinedFilters(ids);
@@ -323,34 +274,17 @@ export class App {
       }
     }
 
-    // сохранили «разрешённые по области» id
     this.areaAllowedIds = picked;
-
-    // возьмём текущий атрибутный результат и пересчитаем
     const now = this.fs.applyOnce();
     const ids = new Set(now.map(n => n?.properties?.id).filter(Boolean));
     this.applyCombinedFilters(ids);
   }
-
-
-  // public onAddFeature(data) {
-  //   this.drawing.getGeoJson$()
-  //     .pipe(
-  //       filter(Boolean),
-  //       take(1),
-  //       takeUntil(this._destroy$),
-  //       tap((geoJson) => console.log(geoJson))
-  //     )
-  //     .subscribe();
-  // }
-
   ngOnInit() {
     this.http.get<FeatureCollection<Point, any>>('assets/data/points.json')
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((fc) => {
         this.allPointsFC = fc;
         this.totalCount = fc.features.length;
-        // соберём массив для рендера и индекс по id
         const views: any[] = [];
         this.pointById.clear();
 
@@ -365,12 +299,11 @@ export class App {
           const id = f.properties?.id ?? String(views.length - 1);
           this.pointById.set(id, view);
         }
-        this.points = views; // старт: показываем все
+        this.points = views;
         this.fs.setItems(fc.features as any);
         this._cdr.detectChanges()
       });
   }
-
 
 }
 
