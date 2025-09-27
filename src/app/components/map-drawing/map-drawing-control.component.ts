@@ -395,10 +395,18 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
     this._setEditable(false);
   }
 
-  public onRemove(): void {
-    this._removeAllFeaturesSafe();
-    this.shapeExists$.next(false);
-  }
+ public onRemove(): void {
+  this._cancelFreehand();          
+  this._removeAllFeaturesSafe();  
+  this.shapeExists$.next(false);
+}
+
+  public cancelDrawing(): void {
+  this._cancelFreehand();     
+  this._setEditable(false);  
+  this.isDraw = false;
+  this.cd.detectChanges();
+}
 
   public onDraw(): void {
     this._setEditable(false);

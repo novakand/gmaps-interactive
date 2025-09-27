@@ -64,6 +64,8 @@
         (onChange)="onChangesMode($event)"
         [optionLabel]="'justify'"
         [optionValue]="'justify'"
+        [allowEmpty]="false"
+        [unselectable]="false"
       >
         <ng-template
           pTemplate="item"
@@ -167,7 +169,7 @@
         <map-isochrone
           #isochrone
           (addFeature)="onAddFeature($event, isochrone)"
-          (removeFeature)="onAddFeature($event, isochrone)"
+          (removeFeature)="onRemoveFeature($event, isochrone)"
         >
 
         </map-isochrone>

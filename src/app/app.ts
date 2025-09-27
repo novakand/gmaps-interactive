@@ -68,7 +68,6 @@ export class App {
   @ViewChild('isochrone') isochrone!: MapIsochroneComponent;
   map: google.maps.Map | null = null;
   private http = inject(HttpClient);
-  public fullscreenClass = 'c-map';
   private destroyRef = inject(DestroyRef);
   public allPointsFC!: FeatureCollection<Point, any>;
   selectedPoint: { position: google.maps.LatLngLiteral; data: any } | null = null;
@@ -99,13 +98,11 @@ export class App {
     zoom: 10,
     disableDefaultUI: true,
     minZoom: 3,
-    // restriction: { strictBounds: false, latLngBounds: { north: 83.8, south: -83.8, west: -180, east: 180 } },
+    restriction: { strictBounds: false, latLngBounds: { north: 83.8, south: -83.8, west: -180, east: 180 } },
     mapId: 'a870aaade7ac6f22',
     gestureHandling: 'greedy',
     clickableIcons: false
   };
-
-  drawerOpen = false;
 
   public onVisibleChangePanel(visible) {
     this.isVisiblePanel = visible;
@@ -117,9 +114,6 @@ export class App {
     this._cdr.detectChanges();
   }
 
-  openDrawer() { this.drawerOpen = true; }
-  closeDrawer() { this.drawerOpen = false; }
-  toggleDrawer() { this.isVisible = !this.isVisible; }
 
   selectPoint(p: any) {
     this.selectedPointId = p?.data?.id ?? null;
@@ -135,7 +129,6 @@ export class App {
   ];
 
   constructor(
-    private _loadProgressService: LoadProgressService,
     private _cdr: ChangeDetectorRef,
     private fs: MapFilterStateService,
 
@@ -143,9 +136,47 @@ export class App {
     this._watchAttributeFilters();
   }
 
-  public onChangesMode(event) {
-    event.value === 'draw' ? this.drawing.onDraw() : this.drawing.onRemove();
-    event.value === 'isochrone' ? this.onVisibleChange(event.originalEvent.checked) : this.onVisibleChange(false)
+  // public onChangesMode(event) {
+  //   console.log(event)
+  //   event.value === 'draw' ? this.drawing.onDraw() : this.drawing.onRemove();
+  //   event.value === 'isochrone' ? this.onVisibleChange(event.originalEvent.checked) : this.onVisibleChange(false)
+
+  // }
+
+  public onChangesMode(ev: any) {
+    // 1) Всегда гасим рисование и закрываем изохрону
+    this.drawing?.onRemove();
+    this._closeIsochroneAndShowAll();
+
+    // 2) Если кнопку включили — запускаем нужный режим
+    if (ev.originalEvent.checked) {
+      if (ev.value === 'draw') this.drawing.onDraw();
+      if (ev.value === 'isochrone') this.onVisibleChange(true);
+      this.value = ev.value;
+    } else {
+      // сняли выбор — режимов нет
+      this.value = null;
+    }
+  }
+
+
+  public onVisibleChange(visible: boolean): void {
+    this.isVisible = visible;
+    this._cdr.detectChanges();
+    if (!visible) this._closeIsochroneAndShowAll();
+  }
+
+  private _closeIsochroneAndShowAll(): void {
+    this.isochrone?.onRemove?.();
+    this.areaAllowedIds = null;
+
+    const byAttrs = this.fs.applyOnce();
+    const ids = new Set(byAttrs.map(n => n?.properties?.id).filter(Boolean));
+    this.applyCombinedFilters(ids);
+
+    this.isVisible = false;
+    this.selectedPointId = null;
+    this._cdr.detectChanges();
   }
 
 
@@ -184,12 +215,13 @@ export class App {
     return this.totalCount > 0 && this.shownCount < this.totalCount;
   }
 
-  public onVisibleChange(visible: boolean): void {
-    this.isVisible = visible;
-    this._cdr.detectChanges()
-    !visible && this.isochrone?.onRemove();
+  // public onVisibleChange(visible: boolean): void {
+  //   this.isVisible = visible;
+  //   this._cdr.detectChanges()
+  //   console.log(visible)
+  //   !visible && this.isochrone?.onRemove();
 
-  }
+  // }
 
   public onClose(visible: boolean) {
     this.isVisibleInwofindow = visible;
@@ -206,7 +238,7 @@ export class App {
     editable: false,
     visible: true
   }
-  items: any[] = [];
+  // items: any[] = [];
 
 
   onMapInit(map: google.maps.Map) {

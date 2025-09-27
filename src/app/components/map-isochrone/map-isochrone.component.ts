@@ -218,7 +218,9 @@ export class MapIsochroneComponent implements OnInit, OnDestroy {
         this.dataLayer.setStyle(merged);
     }
 
-    public onRemove(): void { this._removeAllFeaturesSafe(); }
+    public onRemove(): void { 
+        this._removeAllFeaturesSafe();
+     }
 
     private _removeAllFeaturesSafe(): void {
         if (!this.dataLayer) return;
@@ -435,6 +437,7 @@ export class MapIsochroneComponent implements OnInit, OnDestroy {
 
     public onClear() {
         this.onRemove();
+        this.store.reset();
         this.selectedMarker = null;
         this._cdr.detectChanges();
     }

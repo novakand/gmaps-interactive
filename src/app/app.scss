@@ -10,8 +10,6 @@ body {
 }
 
 
-
-/* ===== reset на всякий случай, чтобы ничего «синего/белого» не прилипало к кластеру ===== */
 .cluster-pin-svg, .cluster-pin-svg *, .cluster-svg, .cluster-svg * {
   border: 0 !important;
   outline: 0 !important;
@@ -19,22 +17,20 @@ body {
   filter: none !important;
 }
 
-/* ===== одиночная точка (синий кружок с обводкой) ===== */
 .job-dot {
   --dot-size: 12px;
-  --dot-color: #0B5FD7;   /* синий */
-  --dot-ring: 2px;        /* толщина обводки */
+  --dot-color: #0B5FD7;   
+  --dot-ring: 2px;       
   --dot-ring-color: #FFFFFF;
 
   width: var(--dot-size);
   height: var(--dot-size);
   border-radius: 50%;
   background: var(--dot-color);
-  box-shadow: 0 0 0 var(--dot-ring) var(--dot-ring-color); /* кольцо-обводка */
+  box-shadow: 0 0 0 var(--dot-ring) var(--dot-ring-color); 
   will-change: transform;
 }
 
-/* ===== кластер (SVG-пин без обводок) ===== */
 .cluster-pin-svg {
   will-change: transform;
   
@@ -45,9 +41,6 @@ body {
   height: 56px;
   display: block;
 }
-
-/* ничего больше не добавляем — это и держит позицию стабильно при зуме */
-
 
 .map-progress.p-progressbar {
   position: absolute;
