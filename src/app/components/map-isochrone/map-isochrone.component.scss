@@ -1,5 +1,21 @@
 .adv-pin {
-  pointer-events: none;         /* чтобы drag работал по всей капле */
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,.25)); /* мягкая тень */
+  pointer-events: none;       
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,.25)); 
 }
 .adv-pin svg { display:block; }
+
+::ng-deep {
+.p-autocomplete-list {
+    overflow: hidden;
+    max-width: 390px;
+    min-width: 390px;
+}
+.p-autocomplete-option>span {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+}

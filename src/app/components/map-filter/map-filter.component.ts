@@ -59,12 +59,12 @@ export class MapFilterComponent implements OnInit, OnDestroy {
     public salaryMax = 100000;
     public salaryStep = 100;
 
-    ngOnInit(): void {
+    public ngOnInit(): void {
         this._prepareLookups();
         this._buildForm();
     }
 
-    ngOnChanges(ch: SimpleChanges): void {
+    public ngOnChanges(ch: SimpleChanges): void {
         if ('items' in ch) {
             this._prepareLookups();
             this.fs.setItems(this.items as any);

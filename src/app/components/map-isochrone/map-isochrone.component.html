@@ -68,7 +68,6 @@
     </div>
 
     <ng-container *ngIf="selectedMarker as m">
-        <!-- HTML контент для AdvancedMarker -->
         <div
             #selectedPin
             class="adv-pin"
@@ -98,7 +97,6 @@
             </svg>
         </div>
 
-        <!-- Сам AdvancedMarker получает ссылку на content -->
         <map-advanced-marker
             [position]="m.position"
             [gmpDraggable]="true"

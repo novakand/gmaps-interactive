@@ -51,6 +51,14 @@ body {
   }
 }
 
+.p-autocomplete-option>span {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
 
 .pin {
   width: 24px;
