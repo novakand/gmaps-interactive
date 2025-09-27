@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Input, signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, Input, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { GoogleMap, GoogleMapsModule } from '@angular/google-maps';
 import { MarkerClustererComponent } from './components/marker-clusterer/marker-clusterer.component';
 import { MapControlsComponent } from './components/map-controls/map-controls.component';
@@ -61,7 +61,7 @@ export interface AreaProvider {
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App {
+export class App implements OnDestroy, OnInit  {
   protected readonly title = signal('gmaps-ui');
   @ViewChild(GoogleMap) mapCmp!: GoogleMap;
   @ViewChild('drawing') drawing!: MapDrawingComponent;
@@ -141,6 +141,43 @@ export class App {
     this._watchAttributeFilters();
   }
 
+  public onMapInit(map: google.maps.Map) {
+    this.map = map;
+  }
+
+  public ngAfterViewInit() { }
+
+  public ngOnInit() {
+    this.http.get<FeatureCollection<Point, any>>('assets/data/points.json')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((fc) => {
+        this.allPointsFC = fc;
+        this.totalCount = fc.features.length;
+        const views: any[] = [];
+        this.pointById.clear();
+
+        for (const f of fc.features) {
+          const [lng, lat] = f.geometry.coordinates;
+          const view: any = {
+            position: { lat, lng },
+            data: f.properties,
+            color: f.properties?.typeColor,
+          };
+          views.push(view);
+          const id = f.properties?.id ?? String(views.length - 1);
+          this.pointById.set(id, view);
+        }
+        this.points = views;
+        this.fs.setItems(fc.features as any);
+        this._cdr.detectChanges()
+      });
+  }
+
+  public ngOnDestroy(): void {
+    this._destroy$.next(true);
+    this._destroy$.complete();
+  }
+
   public onChangesMode(ev: any) {
     this.drawing?.onRemove();
     this._closeIsochroneAndShowAll();
@@ -214,12 +251,6 @@ export class App {
     this._cdr.detectChanges()
   }
 
-  onMapInit(map: google.maps.Map) {
-    this.map = map;
-  }
-
-  ngAfterViewInit() { }
-
   public onDraw(event) {
     event ? this.drawing.onDraw() : this.drawing.onRemove()
   }
@@ -282,31 +313,6 @@ export class App {
     const now = this.fs.applyOnce();
     const ids = new Set(now.map(n => n?.properties?.id).filter(Boolean));
     this.applyCombinedFilters(ids);
-  }
-  ngOnInit() {
-    this.http.get<FeatureCollection<Point, any>>('assets/data/points.json')
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((fc) => {
-        this.allPointsFC = fc;
-        this.totalCount = fc.features.length;
-        const views: any[] = [];
-        this.pointById.clear();
-
-        for (const f of fc.features) {
-          const [lng, lat] = f.geometry.coordinates;
-          const view: any = {
-            position: { lat, lng },
-            data: f.properties,
-            color: f.properties?.typeColor,
-          };
-          views.push(view);
-          const id = f.properties?.id ?? String(views.length - 1);
-          this.pointById.set(id, view);
-        }
-        this.points = views;
-        this.fs.setItems(fc.features as any);
-        this._cdr.detectChanges()
-      });
   }
 
 }
