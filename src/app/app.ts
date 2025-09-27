@@ -61,7 +61,7 @@ export interface AreaProvider {
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })
-export class App implements OnDestroy, OnInit  {
+export class App implements OnDestroy, OnInit {
   protected readonly title = signal('gmaps-ui');
   @ViewChild(GoogleMap) mapCmp!: GoogleMap;
   @ViewChild('drawing') drawing!: MapDrawingComponent;
@@ -87,6 +87,7 @@ export class App implements OnDestroy, OnInit  {
   public isFilterVisible = false;
   public isVisiblePanel = true;
   public isVisibleInwofindow = false;
+  public isSearchCollapsed = false;
   public points: Array<{ position: google.maps.LatLngLiteral; data?: any; color?: string }> = [];
   public style = {
     strokeColor: '#1a73e8',
@@ -178,8 +179,13 @@ export class App implements OnDestroy, OnInit  {
     this._destroy$.complete();
   }
 
+  public onVisibleSearchFilterChange(): void {
+    this.isSearchCollapsed = !this.isSearchCollapsed;
+    this._cdr.markForCheck();
+  }
   public onChangesMode(ev: any) {
     this.drawing?.onRemove();
+    this.isSearchCollapsed = false;
     this._closeIsochroneAndShowAll();
     if (ev.originalEvent.checked) {
       if (ev.value === 'draw') this.drawing.onDraw();
