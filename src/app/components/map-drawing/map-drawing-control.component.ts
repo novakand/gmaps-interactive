@@ -25,7 +25,7 @@ import { ButtonModule } from 'primeng/button';
   selector: 'map-drawing-control',
   templateUrl: './map-drawing-control.component.html',
   styleUrls: ['./map-drawing-control.component.scss'],
-  standalone:true,
+  standalone: true,
   imports: [
     CommonModule,
     FormsModule,
@@ -77,7 +77,7 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
   @Input() public tolerance = 0.01;
   @Input() public fitBounds = false;
 
-  constructor(private cd: ChangeDetectorRef) {}
+  constructor(private cd: ChangeDetectorRef) { }
 
   private static readonly DEFAULT_DATA_STYLE: google.maps.Data.StyleOptions = {
     strokeColor: '#1a73e8',
@@ -122,7 +122,7 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
   @Output() readonly removeFeature: Observable<google.maps.Data.SetGeometryEvent> =
     this._eventManagerDataLayer.getLazyEmitter<google.maps.Data.SetGeometryEvent>('removefeature');
 
-  ngOnInit(): void {
+  public ngOnInit(): void {
     if (this._map._isBrowser) {
       this._ngZone.runOutsideAngular(() => {
         forkJoin({ map: from(this._map._resolveMap()) }).subscribe(({ map }) => {
@@ -142,9 +142,9 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
       this._applyDataStyle();
 
       this._overlayView = new google.maps.OverlayView();
-      this._overlayView.onAdd = () => {};
-      this._overlayView.onRemove = () => {};
-      this._overlayView.draw = () => {};
+      this._overlayView.onAdd = () => { };
+      this._overlayView.onRemove = () => { };
+      this._overlayView.draw = () => { };
       this._overlayView.setMap(map);
 
       this._watchForGeoJsonChanges();
@@ -152,7 +152,7 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnDestroy(): void {
+  public ngOnDestroy(): void {
     this._cancelFreehand();
     this._eventManagerDrawing.destroy();
     this._eventManagerDataLayer.destroy();
@@ -193,7 +193,7 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
       });
   }
 
-   private _removeAllFeaturesSafe(): void {
+  private _removeAllFeaturesSafe(): void {
     if (!this.dataLayer) return;
     const toRemove: google.maps.Data.Feature[] = [];
     this.dataLayer?.forEach(f => toRemove?.push(f));
@@ -263,7 +263,7 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
       if (ev.pointerType === 'mouse' && ev.buttons !== 1) return;
 
       this._activePointerId = ev.pointerId;
-      try { (div as any).setPointerCapture?.(ev.pointerId); } catch {}
+      try { (div as any).setPointerCapture?.(ev.pointerId); } catch { }
       ev.preventDefault();
 
       const ll = this._latLngFromPointer(ev);
@@ -280,7 +280,7 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
 
     const finish = () => {
       if (this._activePointerId != null && (div as any).hasPointerCapture?.(this._activePointerId)) {
-        try { (div as any).releasePointerCapture(this._activePointerId); } catch {}
+        try { (div as any).releasePointerCapture(this._activePointerId); } catch { }
       }
       this._activePointerId = undefined;
 
@@ -395,24 +395,23 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
     this._setEditable(false);
   }
 
- public onRemove(): void {
-  this._cancelFreehand();          
-  this._removeAllFeaturesSafe();  
-  this.shapeExists$.next(false);
-}
+  public onRemove(): void {
+    this._cancelFreehand();
+    this._removeAllFeaturesSafe();
+    this.shapeExists$.next(false);
+  }
 
   public cancelDrawing(): void {
-  this._cancelFreehand();     
-  this._setEditable(false);  
-  this.isDraw = false;
-  this.cd.detectChanges();
-}
+    this._cancelFreehand();
+    this._setEditable(false);
+    this.isDraw = false;
+    this.cd.detectChanges();
+  }
 
   public onDraw(): void {
     this._setEditable(false);
-   
-      if (!this.allowMultiple) this.onRemove();
-      this._startFreehand();
+    if (!this.allowMultiple) this.onRemove();
+    this._startFreehand();
     this.cd.detectChanges();
   }
 
@@ -460,9 +459,9 @@ export class MapDrawingComponent implements OnInit, OnDestroy {
 
         const adjustedTolerance =
           pointCount > 500 ? baseTolerance :
-          pointCount > 200 ? baseTolerance * 0.5 :
-          pointCount > 100 ? baseTolerance * 0.3 :
-          pointCount > 50  ? baseTolerance * 0.1 : 0;
+            pointCount > 200 ? baseTolerance * 0.5 :
+              pointCount > 100 ? baseTolerance * 0.3 :
+                pointCount > 50 ? baseTolerance * 0.1 : 0;
 
         const simplified = simplify(f as any, { tolerance: adjustedTolerance, highQuality: false, mutate: false }) as any;
 

@@ -66,34 +66,8 @@ export class App {
   @ViewChild(GoogleMap) mapCmp!: GoogleMap;
   @ViewChild('drawing') drawing!: MapDrawingComponent;
   @ViewChild('isochrone') isochrone!: MapIsochroneComponent;
-  map: google.maps.Map | null = null;
-  private http = inject(HttpClient);
-  private destroyRef = inject(DestroyRef);
-  public allPointsFC!: FeatureCollection<Point, any>;
-  selectedPoint: { position: google.maps.LatLngLiteral; data: any } | null = null;
-  selectedPointId: string | null = null;
-  private pointById = new Map<string, any>()
-  public isVisible = false;
-  public isFilterVisible = false;
-  public isVisiblePanel = true;
-  public isVisibleInwofindow = false;
-  points: Array<{ position: google.maps.LatLngLiteral; data?: any; color?: string }> = [];
-  private _destroy$ = new Subject<boolean>();
-
-  justifyOptions: Array<{
-    justify: Mode;
-    icon: any;
-    iconSelected: any;
-  }> = [
-      { icon: IconDrawComponent, iconSelected: IconDrawSelectedComponent, justify: 'draw' },
-      { icon: IconIsochroneComponent, iconSelected: IconIsochroneSelectedComponent, justify: 'isochrone' }
-    ];
-
-  value: Mode | null = null;
-  totalCount = 0;
-  areaAllowedIds = null;
-  isSelected = (opt: { justify: Mode }) => this.value === opt.justify;
-  options: google.maps.MapOptions = {
+  public map: google.maps.Map | null = null;
+  public mapOptions: google.maps.MapOptions = {
     center: { lat: 40.41622141966852, lng: -3.703246203018122 },
     zoom: 10,
     disableDefaultUI: true,
@@ -103,6 +77,41 @@ export class App {
     gestureHandling: 'greedy',
     clickableIcons: false
   };
+  private http = inject(HttpClient);
+  private destroyRef = inject(DestroyRef);
+  public allPointsFC!: FeatureCollection<Point, any>;
+  public selectedPoint: { position: google.maps.LatLngLiteral; data: any } | null = null;
+  public selectedPointId: string | null = null;
+  private pointById = new Map<string, any>()
+  public isVisible = false;
+  public isFilterVisible = false;
+  public isVisiblePanel = true;
+  public isVisibleInwofindow = false;
+  public points: Array<{ position: google.maps.LatLngLiteral; data?: any; color?: string }> = [];
+  public style = {
+    strokeColor: '#1a73e8',
+    strokeOpacity: 1,
+    strokeWeight: 2,
+    fillColor: '#1a73e8',
+    fillOpacity: 0.2,
+    editable: false,
+    visible: true
+  }
+  private _destroy$ = new Subject<boolean>();
+
+  public modeOptions: Array<{
+    justify: Mode;
+    icon: any;
+    iconSelected: any;
+  }> = [
+      { icon: IconDrawComponent, iconSelected: IconDrawSelectedComponent, justify: 'draw' },
+      { icon: IconIsochroneComponent, iconSelected: IconIsochroneSelectedComponent, justify: 'isochrone' }
+    ];
+
+  public modevalue: Mode | null = null;
+  public totalCount = 0;
+  public areaAllowedIds = null;
+  public isSelected = (opt: { justify: Mode }) => this.modevalue === opt.justify;
 
   public onVisibleChangePanel(visible) {
     this.isVisiblePanel = visible;
@@ -115,18 +124,14 @@ export class App {
   }
 
 
-  selectPoint(p: any) {
-    this.selectedPointId = p?.data?.id ?? null;
+  public selectPoint(point: any) {
+    this.selectedPointId = point?.data?.id ?? null;
     this._cdr.detectChanges()
-    this.selectedPoint = p;
+    this.selectedPoint = point;
     this._cdr.detectChanges()
     this.isVisibleInwofindow = true;
     this._cdr.detectChanges()
   }
-
-  markers = [
-    { position: { lat: 59.334591, lng: 18.06324 }, title: 'Center' },
-  ];
 
   constructor(
     private _cdr: ChangeDetectorRef,
@@ -136,31 +141,19 @@ export class App {
     this._watchAttributeFilters();
   }
 
-  // public onChangesMode(event) {
-  //   console.log(event)
-  //   event.value === 'draw' ? this.drawing.onDraw() : this.drawing.onRemove();
-  //   event.value === 'isochrone' ? this.onVisibleChange(event.originalEvent.checked) : this.onVisibleChange(false)
-
-  // }
-
   public onChangesMode(ev: any) {
-    // 1) Всегда гасим рисование и закрываем изохрону
     this.drawing?.onRemove();
     this._closeIsochroneAndShowAll();
-
-    // 2) Если кнопку включили — запускаем нужный режим
     if (ev.originalEvent.checked) {
       if (ev.value === 'draw') this.drawing.onDraw();
-      if (ev.value === 'isochrone') this.onVisibleChange(true);
-      this.value = ev.value;
+      if (ev.value === 'isochrone') this.onVisibleSearchChange(true);
+      this.modevalue = ev.value;
     } else {
-      // сняли выбор — режимов нет
-      this.value = null;
+      this.modevalue = null;
     }
   }
 
-
-  public onVisibleChange(visible: boolean): void {
+  public onVisibleSearchChange(visible: boolean): void {
     this.isVisible = visible;
     this._cdr.detectChanges();
     if (!visible) this._closeIsochroneAndShowAll();
@@ -179,8 +172,7 @@ export class App {
     this._cdr.detectChanges();
   }
 
-
-  private _watchAttributeFilters() {
+  private _watchAttributeFilters(): void {
     this.fs.filtered$.subscribe(filteredItems => {
       const ids = new Set<string>();
       for (const it of filteredItems ?? []) {
@@ -191,7 +183,7 @@ export class App {
     });
   }
 
-  private applyCombinedFilters(attributeIds: Set<string>) {
+  private applyCombinedFilters(attributeIds: Set<string>): void {
     const base = this.areaAllowedIds;
     const finalIds = base
       ? new Set([...attributeIds].filter(id => base.has(id)))
@@ -215,36 +207,16 @@ export class App {
     return this.totalCount > 0 && this.shownCount < this.totalCount;
   }
 
-  // public onVisibleChange(visible: boolean): void {
-  //   this.isVisible = visible;
-  //   this._cdr.detectChanges()
-  //   console.log(visible)
-  //   !visible && this.isochrone?.onRemove();
 
-  // }
-
-  public onClose(visible: boolean) {
+  public onClose(visible: boolean): void {
     this.isVisibleInwofindow = visible;
     this.selectedPointId = null
     this._cdr.detectChanges()
   }
 
-  style = {
-    strokeColor: '#1a73e8',
-    strokeOpacity: 1,
-    strokeWeight: 2,
-    fillColor: '#1a73e8',
-    fillOpacity: 0.2,
-    editable: false,
-    visible: true
-  }
-  // items: any[] = [];
-
-
   onMapInit(map: google.maps.Map) {
     this.map = map;
   }
-
 
   ngAfterViewInit() { }
 

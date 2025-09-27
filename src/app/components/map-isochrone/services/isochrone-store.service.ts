@@ -26,9 +26,9 @@ export class IsochroneStore {
     readonly state$ = this._state$.asObservable();
 
     get value(): IsochronePersistState { return this._state$.value; }
-    patch(p: Partial<IsochronePersistState>) { this._state$.next({ ...this._state$.value, ...p }); }
+    public patch(p: Partial<IsochronePersistState>) { this._state$.next({ ...this._state$.value, ...p }); }
 
-    reset(keys?: (keyof IsochronePersistState)[]) {
+    public reset(keys?: (keyof IsochronePersistState)[]) {
         if (!keys || keys.length === 0) {
             this._state$.next({ ...DEFAULT_STATE });
             return;

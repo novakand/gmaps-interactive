@@ -1,20 +1,19 @@
-// gmaps-geocode.service.ts
 import { Injectable, inject, NgZone } from '@angular/core';
 import { Observable, of } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
-export class GmapsGeocodeService {
+export class MapGeocodeService {
   private readonly zone = inject(NgZone);
   private geocoder?: google.maps.Geocoder;
 
-  init() {
+  public init() {
     if (this.geocoder) return;
     this.zone.runOutsideAngular(() => {
       this.geocoder = new google.maps.Geocoder();
     });
   }
 
-  reverse$(latLng: google.maps.LatLng | google.maps.LatLngLiteral): Observable<google.maps.GeocoderResult[] | null> {
+  public reverse$(latLng: google.maps.LatLng | google.maps.LatLngLiteral): Observable<google.maps.GeocoderResult[] | null> {
     this.init();
     if (!this.geocoder) return of(null);
 

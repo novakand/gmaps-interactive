@@ -22,10 +22,10 @@ import { SelectButton } from 'primeng/selectbutton';
 import { Slider } from 'primeng/slider';
 import { MapboxIsochroneService } from './services/isochrone.service';
 import { Feature, FeatureCollection, GeoJsonProperties, Geometry } from 'geojson';
-import { GmapsAutocompleteService } from '../../services/gmaps-autocomplete.service';
-import { GmapsPlacesDetailsService } from '../../services/gmaps-places-details.service';
-import { GmapsSessionService } from '../../services/gmaps-session.service';
-import { GmapsGeocodeService } from '../../services/gmaps-geocode.service';
+import { MapAutocompleteService } from '../../services/map-autocomplete.service';
+import { GmapsPlacesDetailsService } from '../../services/map-places-details.service';
+import { MapSessionService } from '../../services/map-session.service';
+import { MapGeocodeService } from '../../services/map-geocode.service';
 import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { IsochroneStore } from './services/isochrone-store.service';
 @Component({
@@ -56,10 +56,10 @@ export class MapIsochroneComponent implements OnInit, OnDestroy {
     private _fb = inject(FormBuilder);
     private readonly store = inject(IsochroneStore);
 
-    private readonly autocompleteSvc = inject(GmapsAutocompleteService);
+    private readonly autocompleteSvc = inject(MapAutocompleteService);
     private readonly detailsSvc = inject(GmapsPlacesDetailsService);
-    private readonly geocodeSvc = inject(GmapsGeocodeService);
-    private readonly session = inject(GmapsSessionService);
+    private readonly geocodeSvc = inject(MapGeocodeService);
+    private readonly session = inject(MapSessionService);
 
     public map!: google.maps.Map;
     public dataLayer?: google.maps.Data;
@@ -103,16 +103,17 @@ export class MapIsochroneComponent implements OnInit, OnDestroy {
 
     ngOnInit(): void {
         this._buildForm();
+
         if (this._map._isBrowser) {
             this._ngZone.runOutsideAngular(() => {
-                forkJoin({ map: from(this._map._resolveMap()) })
-                    .pipe(takeUntil(this._destroy$))
-                    .subscribe(({ map }) => this._initialize(map));
+                from(this._map._resolveMap())
+                    .pipe(take(1), takeUntil(this._destroy$))
+                    .subscribe((map) => this._initialize(map));
             });
         }
     }
 
-    ngOnDestroy(): void {
+    public ngOnDestroy(): void {
         this._destroy$.next();
         this._destroy$.complete();
         this._eventManagerDataLayer.destroy();
@@ -218,9 +219,9 @@ export class MapIsochroneComponent implements OnInit, OnDestroy {
         this.dataLayer.setStyle(merged);
     }
 
-    public onRemove(): void { 
+    public onRemove(): void {
         this._removeAllFeaturesSafe();
-     }
+    }
 
     private _removeAllFeaturesSafe(): void {
         if (!this.dataLayer) return;

@@ -49,15 +49,15 @@ export class MapFilterComponent implements OnInit, OnDestroy {
 
     public form!: FormGroup;
     private _destroy$ = new Subject<void>();
-    typeSuggestions: string[] = [];
-    employmentSuggestions: string[] = [];
+    public typeSuggestions: string[] = [];
+    public employmentSuggestions: string[] = [];
 
     private typeAll: string[] = [];
     private employmentAll: string[] = [];
 
-    salaryMin = 0;
-    salaryMax = 100000;
-    salaryStep = 100;
+    public salaryMin = 0;
+    public salaryMax = 100000;
+    public salaryStep = 100;
 
     ngOnInit(): void {
         this._prepareLookups();
@@ -70,16 +70,21 @@ export class MapFilterComponent implements OnInit, OnDestroy {
             this.fs.setItems(this.items as any);
 
             if (this.form) {
-                const cur = this.form.get('salaryRange')?.value as [number, number];
-                const isDefault = !cur || (cur[0] === 0 && cur[1] === Number.MAX_SAFE_INTEGER);
-                if (isDefault) {
-                    this.form.get('salaryRange')?.setValue([this.salaryMin, this.salaryMax], { emitEvent: true });
-                }
+                const cur = this.form.get('salaryRange')!.value as [number, number] | null;
+
+                const next: [number, number] =
+                    !cur || cur[1] === Number.MAX_SAFE_INTEGER
+                        ? [this.salaryMin, this.salaryMax]
+                        : [
+                            Math.max(this.salaryMin, cur[0]),
+                            Math.min(this.salaryMax, cur[1]),
+                        ];
+                this.form.get('salaryRange')!.setValue(next, { emitEvent: false });
+                this._cdr.markForCheck();
             }
         }
     }
-
-    ngOnDestroy(): void {
+    public ngOnDestroy(): void {
         this._destroy$.next();
         this._destroy$.complete();
     }
@@ -113,37 +118,40 @@ export class MapFilterComponent implements OnInit, OnDestroy {
     private _buildForm(): void {
         const s = this.fs.value;
 
+        const initRange: [number, number] =
+            !s.salaryRange || s.salaryRange[1] === Number.MAX_SAFE_INTEGER
+                ? [this.salaryMin, this.salaryMax]
+                : [
+                    Math.max(this.salaryMin, s.salaryRange[0]),
+                    Math.min(this.salaryMax, s.salaryRange[1]),
+                ];
+
         this.form = this._fb.group({
             type: new FormControl<string[]>(s.type ?? [], { nonNullable: true }),
             employment: new FormControl<string[]>(s.employment ?? [], { nonNullable: true }),
-            salaryRange: new FormControl<[number, number]>(
-                (s.salaryRange as [number, number]) ?? [this.salaryMin, this.salaryMax],
-                {
-                    nonNullable: true,
-                    validators: [
-                        Validators.required,
-                        (ctrl) => {
-                            const v = ctrl.value as [number, number] | null;
-                            if (!v) return null;
-                            return v[0] <= v[1] ? null : { range: true };
-                        }
-                    ]
-                }
-            )
+            salaryRange: new FormControl<[number, number]>(initRange, {
+                nonNullable: true,
+                validators: [
+                    Validators.required,
+                    (ctrl) => {
+                        const v = ctrl.value as [number, number] | null;
+                        return v && v[0] <= v[1] ? null : { range: true };
+                    }
+                ]
+            })
         });
 
         this.form.valueChanges
             .pipe(takeUntil(this._destroy$))
-            .subscribe(v => {
-                this.fs.patch({
-                    type: v.type ?? [],
-                    employment: v.employment ?? [],
-                    salaryRange: v.salaryRange ?? [this.salaryMin, this.salaryMax],
-                });
-            });
+            .subscribe(v => this.fs.patch({
+                type: v.type ?? [],
+                employment: v.employment ?? [],
+                salaryRange: v.salaryRange ?? [this.salaryMin, this.salaryMax],
+            }));
     }
 
-    searchType(ev: { query?: string }) {
+
+    public searchType(ev: { query?: string }) {
         const q = (ev?.query || '').trim().toLowerCase();
         if (!q) {
             this.typeSuggestions = this.typeAll.slice(0, 20);
@@ -153,7 +161,7 @@ export class MapFilterComponent implements OnInit, OnDestroy {
         this._cdr.markForCheck();
     }
 
-    searchEmployment(ev: { query?: string }) {
+    public searchEmployment(ev: { query?: string }) {
         const q = (ev?.query || '').trim().toLowerCase();
         if (!q) {
             this.employmentSuggestions = this.employmentAll.slice(0, 20);
@@ -162,14 +170,6 @@ export class MapFilterComponent implements OnInit, OnDestroy {
         this.employmentSuggestions = this.employmentAll.filter(s => s.toLowerCase().includes(q)).slice(0, 20);
         this._cdr.markForCheck();
     }
-
-    onApplyClick() {
-        if (this.form.invalid) {
-            this.form.markAllAsTouched();
-            return;
-        }
-    }
-
 
     get f() { return this.form.controls as any; }
 }

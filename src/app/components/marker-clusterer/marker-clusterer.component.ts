@@ -49,12 +49,12 @@ export class MarkerClustererComponent implements OnChanges, OnDestroy, AfterCont
 
   constructor(private appRef: ApplicationRef, private ngZone: NgZone) { }
 
-  ngAfterContentInit(): void {
+  public ngAfterContentInit(): void {
     this.contentReady = true;
     this.scheduleRebuild();
   }
 
-  ngOnChanges(changes: SimpleChanges): void {
+  public ngOnChanges(changes: SimpleChanges): void {
     if (!this.contentReady) return;
 
     if (changes['map'] && !this.map) return;
@@ -65,7 +65,7 @@ export class MarkerClustererComponent implements OnChanges, OnDestroy, AfterCont
     this.scheduleRebuild();
   }
 
-  ngOnDestroy(): void {
+  public ngOnDestroy(): void {
     this.destroyClusterer();
   }
 
@@ -88,7 +88,7 @@ export class MarkerClustererComponent implements OnChanges, OnDestroy, AfterCont
     });
   }
 
-  private rebuild() {
+  private rebuild(): any {
     if (!this.map) return;
     this.ensureAdvancedAvailable();
     this.ngZone.runOutsideAngular(() => {
@@ -145,7 +145,7 @@ export class MarkerClustererComponent implements OnChanges, OnDestroy, AfterCont
     });
   }
 
-  private createAdvancedMarker(p: ClusterPoint) {
+  private createAdvancedMarker(p: ClusterPoint): any {
     if (this.markerTpl) {
       const { el } = this.renderTemplate(this.markerTpl, { $implicit: p, point: p }, 'marker');
       return new google.maps.marker.AdvancedMarkerElement({
@@ -194,7 +194,7 @@ export class MarkerClustererComponent implements OnChanges, OnDestroy, AfterCont
     return el;
   }
 
-  private destroyClusterer() {
+  private destroyClusterer(): void {
     if (this.clusterer) {
       this.clusterer.clearMarkers();
       this.clusterer.setMap(null);
